@@ -1,2 +1,94 @@
-\chapter{}
+\chapter{Introducción}
+\label{ch:intro}
+
+% Motivación general de la investigación, hipótesis, objetivos y estructura del informe.
+% Máximo 5 páginas.
+
+\section{Motivación}
+
+La \acrfull{sdp} constituye una de las clases de optimización convexa de mayor relevancia
+práctica y teórica.
+Sus aplicaciones abarcan desde el diseño de controladores robustos y la síntesis de filtros
+en ingeniería de sistemas, hasta la relajación de problemas combinatoriales NP-difíciles
+—como corte máximo, coloreo de grafos y programación cuadrática binaria—,
+el procesamiento de señales, el aprendizaje automático y la geometría algebraica.
+Esta versatilidad ha motivado el desarrollo de una variedad de solvers especializados que
+implementan distintos paradigmas algorítmicos: métodos de punto interior primal-dual,
+métodos de barrera dual, y métodos de Lagrangiano aumentado orientados a gran escala.
+
+Sin embargo, la pregunta de \textit{qué solver es más adecuado para un problema dado}
+permanece abierta.
+Los benchmarks tradicionales suelen evaluar el desempeño de los algoritmos mediante
+métricas agregadas, como el rendimiento promedio sobre un conjunto predefinido de instancias
+de prueba, o mediante análisis de peor caso.
+Si bien estos enfoques permiten obtener una visión general del desempeño, también pueden
+ocultar patrones relevantes asociados a características específicas de las instancias.
+En consecuencia, se pierde capacidad para identificar las fortalezas y debilidades
+particulares de cada algoritmo frente a distintas estructuras del problema.
+
+El marco metodológico de \acrfull{isa}, introducido por Smith-Miles y Muñoz, ofrece una
+respuesta a esta pregunta.
+\acrshort{isa} proyecta las instancias de un problema en un espacio bidimensional definido
+por sus características estructurales y, sobre ese espacio, delimita las regiones en que
+cada algoritmo exhibe rendimiento superior.
+Esto permite identificar de forma visual y cuantitativa las \textit{fortalezas} y
+\textit{debilidades} de cada solver, así como detectar regiones del espacio de instancias
+que se encuentran subrepresentadas en los benchmarks
+disponibles~\cite{smith-milesInstanceSpaceAnalysis2023}.
+
+Una limitación frecuente en los estudios basados en \acrshort{isa} es la escasez de
+instancias en ciertas regiones del espacio, lo que dificulta la extracción de conclusiones
+robustas sobre el rendimiento de los algoritmos en esas zonas.
+Para subsanar esta limitación, Smith-Miles y Bowly~\cite{smith-milesGeneratingNewTest2015}
+propusieron el uso de algoritmos genéticos que evolucionan instancias existentes hacia
+regiones objetivo del espacio de instancias, generando nuevos problemas con características
+estructurales deseables de forma automatizada.
+
+La aplicación conjunta de \acrshort{isa} y generación evolutiva de instancias al dominio de
+la \acrshort{sdp} representa una contribución original: a la fecha, no existe un estudio
+sistemático del espacio de instancias de la \acrshort{sdp} que integre caracterización
+estructural, análisis comparativo de solvers y generación dirigida de nuevas instancias.
+Este trabajo aborda esa brecha.
+
+\section{Hipótesis}
+
+Las instancias de \acrshort{sdp} se distribuyen de forma no uniforme en el espacio definido
+por sus propiedades estructurales medibles, y esta distribución determina en gran medida el
+rendimiento relativo de los solvers disponibles. En consecuencia, es posible: (i) caracterizar
+las regiones del espacio de instancias en que cada solver presenta ventajas comparativas,
+identificando las propiedades estructurales que condicionan su desempeño; y (ii) generar mediante
+evolución dirigida nuevas instancias con características estructurales deseables que amplíen la
+cobertura experimental del espacio, enriqueciendo así la capacidad de análisis y de selección de
+algoritmos.
+
+\section{Objetivos}
+
+\subsection{Objetivo General}
+
+Caracterizar el espacio de instancias de la \acrfull{sdp} mediante el análisis sistemático de
+propiedades estructurales computables, el estudio comparativo del rendimiento de solvers representativos,
+y la generación evolutiva de instancias sintéticas que amplíen la cobertura experimental del espacio de
+instancias.
+
+\subsection{Objetivos Específicos}
+
+\begin{enumerate}
+    \item Diseñar un conjunto de características estructurales computables directamente desde instancias
+    \acrshort{sdp} en formato SDPA sparse, que capturen dimensiones relevantes
+    de la geometría del problema tales como la estructura de bloques, la sparsity, la conectividad del grafo
+    agregado y las propiedades de chordalidad.
+
+    \item Construir el espacio de instancias de \acrshort{sdp} mediante el framework \acrshort{isa} y
+    analizar las fortalezas y debilidades de un conjunto representativo de solvers, identificando las regiones
+    del espacio en que cada algoritmo exhibe rendimiento superior y las propiedades estructurales que explican
+    dicho rendimiento.
+
+    \item Generar instancias sintéticas de \acrshort{sdp} con características estructurales deseables mediante
+    un \acrfull{ga} que evoluciona instancias existentes hacia regiones subpobladas del espacio de instancias,
+    ampliando la cobertura experimental disponible para el análisis.
+\end{enumerate}
+
+\section{Estructura del informe}
+
+% Descripción breve de la organización del documento.
 

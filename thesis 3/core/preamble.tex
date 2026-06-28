@@ -1,0 +1,38 @@
+% ─── Packages ───────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{hyperref}
+\usepackage{csquotes}
+\usepackage[backend=biber, style=ieee, autolang=none]{biblatex}
+\usepackage[acronym]{glossaries}
+\usepackage{geometry}
+
+% ─── Page layout ─────────────────────────────────────────────────────────────
+\geometry{a4paper, margin=2.5cm}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\graphicspath{{../images/}{../logos/}}
+
+% ─── Bibliography ────────────────────────────────────────────────────────────
+\addbibresource{../references.bib}
+
+% Strip \relax from author names exported by Zotero (e.g. {\relax KATE})
+\DeclareSourcemap{
+  \maps[datatype=bibtex]{
+    \map{
+      \step[fieldsource=author,
+            match=\regexp{\{\\relax\s+},
+            replace=\regexp{\{}]
+    }
+  }
+}
+
+% ─── Glossaries & Acronyms ───────────────────────────────────────────────────
+\makeglossaries
+\newacronym{sdp}{SDP}{Semidefinite Programming}
+\newacronym{isa}{ISA}{Instance Space Analysis}
+\newacronym{ga}{GA}{Genetic Algorithm}

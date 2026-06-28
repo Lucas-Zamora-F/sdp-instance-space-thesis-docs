@@ -1,0 +1,27 @@
+{
+  "ltex.language": "es",
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex → biber → makeglossaries → pdflatex × 2",
+      "tools": ["pdflatex", "biber", "makeglossaries", "pdflatex", "pdflatex"]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "pdflatex",
+      "command": "pdflatex",
+      "args": ["-interaction=nonstopmode", "-synctex=1", "%DOC%"]
+    },
+    {
+      "name": "biber",
+      "command": "biber",
+      "args": ["%DOCFILE%"]
+    },
+    {
+      "name": "makeglossaries",
+      "command": "makeglossaries",
+      "args": ["%DOCFILE%"]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "pdflatex → biber → makeglossaries → pdflatex × 2"
+}
