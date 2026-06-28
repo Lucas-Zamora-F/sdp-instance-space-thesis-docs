@@ -7,10 +7,14 @@
 \usepackage{graphicx}
 \usepackage{amsmath, amssymb}
 \usepackage{hyperref}
+\usepackage[backend=biber, style=ieee]{biblatex}
+\addbibresource{../references.bib}
 \usepackage{geometry}
 \geometry{a4paper, margin=2.5cm}
 
 \graphicspath{{../images/}{../logos/}}
+
+\input{../core/config}
 
 % ─── Document ───────────────────────────────────────────────────────────────
 \begin{document}
@@ -28,5 +32,7 @@
 \input{../chapters/chapter08}
 
 \input{../core/glossary}
+
+\printbibliography
 
 \end{document}
