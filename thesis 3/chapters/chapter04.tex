@@ -1,2 +1,206 @@
-\chapter{}
+﻿\chapter{Diseño experimental y selección de herramientas}
+\label{ch:disenio}
 
+Este capítulo justifica las decisiones de diseño que dan forma al experimento: qué instancias se usaron,
+qué solvers se integraron, qué características se extrajeron, qué herramienta de análisis se eligió y
+cómo se configuró el algoritmo genético. Cada elección responde a criterios técnicos y metodológicos explícitos
+que se documentan a continuación.
+
+\section{Selección de Bibliotecas de Instancias}
+\label{sec:seleccion_instancias}
+
+A diferencia de áreas como la programación lineal entera, donde repositorios como MIPLIB
+concentran miles de instancias bajo un formato y criterio de calidad unificados, la programación semidefinida carece
+de un repositorio análogo de referencia única. Las instancias de \acrshort{sdp} se encuentran dispersas entre
+colecciones mantenidas de forma independiente, con formatos heterogéneos, escalas distintas y orígenes aplicados muy
+variados. Esta fragmentación obligó a extraer instancias de múltiples fuentes y normalizarlas a un formato común
+antes de poder realizar cualquier análisis comparativo.
+
+La calidad de un análisis del espacio de instancias depende directamente de que estas cubran de forma amplia y
+representativa el espacio de problemas posibles. Una base de instancias sesgada
+hacia una sola fuente produciría un espacio de instancias con regiones artificialmente vacías que reflejarían
+la ausencia de diversidad experimental, no una característica genuina del problema \cite{smith-milesInstanceSpaceAnalysis2023}.
+
+Se seleccionaron cuatro bibliotecas de benchmarks con criterios de diversidad estructural y aplicada:
+
+\textbf{SDPLIB 1.2}\cite{borchersSDPLIB12Library1999}. La biblioteca de referencia histórica del área, con
+instancias provenientes de control óptimo, diseño estructural, localización de antenas y relajaciones semidefinidas
+de problemas combinatoriales. Su amplio uso en la literatura facilita la comparación con trabajos previos.
+
+\textbf{Benchmarks de Hans Mittelmann}\cite{PlatoasueduFtpSparse_sdphtml}. Colección de instancias de
+mediana y gran escala mantenida de forma independiente, que incluye los problemas \texttt{kocvara\_pennon} provenientes
+de optimización estructural con variables de forma. Esta fuente complementa SDPLIB con instancias de mayor dimensión que
+estresan el comportamiento de los solvers en regímenes de memoria y tiempo.
+
+\textbf{DIMACS Library}\cite{DIMACSLibraryMixeda}. Problemas de programas semidefinidos-cuadráticos-lineales mixtos,
+originalmente diseñados como punto de referencia para evaluar el avance de los solvers de propósito general. Aporta
+instancias con mezcla de variables continuas y semidefinidas.
+
+\textbf{Biq Mac Library}\cite{BiqMacLibrarya}. Problemas de corte máximo (\textit{max-cut}) formulados como
+relajaciones \acrshort{sdp}, con estructura de grafos densos. Constituyen una clase estructuralmente distinta: una sola
+restricción por arista, bloque único de gran dimensión, y densidad alta. Esto introduce una región del espacio de instancias
+que las otras tres fuentes no cubren.
+
+En conjunto, las cuatro fuentes abarcan orígenes aplicados heterogéneos ---control, geometría, combinatoria, diseño
+estructural--- y un rango amplio de valores para las características extraídas, lo que favorece la separabilidad de regiones
+en el espacio de instancias.
+
+Cabe notar que no todas las instancias de estas fuentes corresponden a programas semidefinidos puros en su formulación
+original: en varios casos provienen de problemas de optimización más generales ---mixtos, cuadráticos o combinatoriales---
+cuya relajación semidefinida constituye la instancia efectivamente analizada. Esta práctica es estándar en el área y no
+compromete la validez del análisis, dado que las características se extraen directamente de la formulación SDP
+resultante, independientemente del origen del problema.
+
+\section{Selección de Solvers}
+\label{sec:seleccion_solvers}
+
+La selección de solvers busca cubrir los principales paradigmas algorítmicos para \acrshort{sdp}, de modo que el espacio de
+instancias refleje diferencias genuinas de rendimiento entre familias de métodos, y no solo variaciones de implementación dentro
+de una misma familia.
+
+\begin{itemize}
+    \item \textbf{SDPT3 4.0}\cite{tohImplementationUsageSDPT32012a}: método de punto interior primal-dual con
+    predictor-corrector HKM/NT, implementado en MATLAB con núcleos MEX compilados en C. Es el solver más citado en la literatura de
+    benchmarking \acrshort{sdp} y sirve como referencia de comparación.
+
+    \item \textbf{SeDuMi 1.3.8}\cite{sturmUSINGSEDUMI1022001}: método de punto interior primal-dual basado en el paso de Nesterov-Todd,
+    con soporte para conos de segundo orden y semidefinidos. Comparte familia algorítmica con SDPT3 pero difiere en la implementación del
+    sistema de búsqueda de dirección.
+
+    \item \textbf{SDPA 7.3.9}\cite{}: método de punto interior primal-dual implementado en C++, que se integró como
+    ejecutable externo. A diferencia de los anteriores, no depende de MATLAB, lo que elimina el overhead del intérprete para instancias
+    medianas.
+
+    \item \textbf{SDPNAL+ 1.0}\cite{}: método de Lagrangiano aumentado con paso de Newton-CG para el
+    subproblema, diseñado específicamente para instancias de gran escala donde los
+    métodos de punto interior resultan prohibitivos en memoria. Representa una familia algorítmica distinta a los anteriores.
+
+    \item \textbf{DSDP 5.8}\cite{}: método de escalamiento dual, que construye iterados solo en el espacio
+    dual y evalúa factibilidad primal a posteriori. Su bajo requerimiento de memoria lo hace adecuado para instancias con muchas
+    restricciones.
+
+    \item \textbf{CSDP 6.2.0}\cite{borchersCSDPLibrarySemide}: método de punto interior primal-dual implementado en C, portátil y
+    sin dependencias externas. Permite una línea base de comparación limpia, independiente de entornos MATLAB.
+\end{itemize}
+
+La combinación de tres solvers de punto interior primal-dual (SDPT3, SeDuMi, SDPA), un método de Lagrangiano aumentado (SDPNAL+),
+un método de escalamiento dual (DSDP) y un ejecutable C puro (CSDP) garantiza que las diferencias de rendimiento observadas en el
+espacio de instancias sean atribuibles a propiedades estructurales del problema y no a artefactos de una sola familia algorítmica.
+
+\section{Selección del Formato Unificado}
+\label{sec:seleccion_formato}
+
+El formato SDPA sparse (\texttt{.dat-s}) fue adoptado como representación canónica por tres razones. Primero, es el formato nativo de
+SDPLIB y el estándar de facto en benchmarking \acrshort{sdp}, lo que
+facilita la incorporación de nuevas fuentes sin conversión adicional. Segundo, todos los solvers seleccionados lo leen directamente o
+disponen de rutinas de conversión maduras. Tercero, la representación sparse por cuádruplas $(\text{matno}, \text{blkno}, i, j, v)$
+almacena únicamente las entradas no nulas del triángulo superior, lo que es eficiente para las instancias típicamente dispersas de este problema.
+La normalización al formato \texttt{.dat-s} se describe en la Sección~\ref{sec:normalizacion}.
+
+\section{Selección de Características Estructurales}
+\label{sec:seleccion_features}
+
+Las características deben satisfacer tres requisitos para ser útiles en \acrshort{isa}: (i) computabilidad directa desde la instancia sin resolverla,
+para garantizar independencia entre features y rendimiento; (ii) relevancia para la dificultad del problema desde un punto de vista teórico o empírico;
+y (iii) diversidad suficiente para separar distintas familias de instancias en el espacio proyectado.
+
+Las quince características seleccionadas (descritas en la Sección~\ref{sec:features}) se agrupan en cinco familias que cubren dimensiones ortogonales
+de la estructura de una instancia \acrshort{sdp}:
+
+\begin{itemize}
+    \item \textbf{Tamaño y bloqueo:} capturan la complejidad computacional básica de la factorización de Cholesky, que domina el costo por iteración
+    de los métodos de punto interior.
+
+    \item \textbf{Sparsity:} determina si es posible explotar técnicas de álgebra lineal dispersa para reducir el costo de la formación y factorización
+    del sistema de Schur.
+
+    \item \textbf{Grafo agregado:} la estructura de conectividad de las matrices de restricción influye directamente en el llenado de la factorización
+    de Cholesky del sistema de ecuaciones normales.
+
+    \item \textbf{Estructura chordal y ancho de árbol:} la chordalidad del grafo agregado es una condición suficiente para explotar descomposiciones de
+    árbol de cliques en métodos de punto interior. El ancho de árbol aproximado cuantifica qué tan lejos
+    está la instancia de ser tratable mediante esta técnica.
+
+    \item \textbf{Matriz de Gram de Schur:} el condicionamiento del sistema de ecuaciones normales es un predictor conocido de la dificultad numérica de
+    los métodos de punto interior: sistemas mal condicionados requieren iteraciones adicionales o precondicionamiento.
+\end{itemize}
+
+La etapa SIFTED de MATILDA realiza una selección automática adicional sobre estas quince características antes de construir la proyección, descartando
+las que resulten redundantes o de baja relevancia para la separación de rendimiento entre solvers (Sección~\ref{sec:isa}).
+
+\section{Selección de MATILDA como Herramienta de ISA}
+\label{sec:seleccion_matilda}
+
+MATILDA es la implementación de referencia oficial de la metodología \acrshort{isa} propuesta por
+Smith-Miles y Muñoz. Frente a alternativas de reducción de dimensionalidad convencionales (PCA, t-SNE, UMAP),
+MATILDA construye una proyección explícitamente optimizada para maximizar la correlación entre las coordenadas del espacio y el rendimiento de los algoritmos,
+lo que produce un espacio interpretable donde la posición de una instancia predice qué solver la resolverá mejor. Esta propiedad es esencial para el
+objetivo del trabajo: no solo describir el espacio, sino orientar la generación de nuevas instancias hacia regiones con comportamiento deseado.
+
+Adicionalmente, MATILDA genera automáticamente los footprints de cada solver (etapa TRACE) y los modelos de selección de algoritmos (etapa PYTHIA),
+que son las salidas primarias de interés para el análisis comparativo de los solvers.
+
+\section{Diseño del Algoritmo Genético}
+\label{sec:disenio_ga}
+
+La elección de un algoritmo genético como mecanismo de generación de instancias sintéticas sigue directamente el marco de Smith-Miles y
+Bowly, que demuestra que la evolución en el espacio de instancias es una estrategia efectiva para
+producir instancias con propiedades estructurales controladas sin requerir información de gradiente respecto al espacio proyectado. Esta
+propiedad es importante dado que la proyección PILOT es no diferenciable con respecto a las entradas discretas de una instancia \acrshort{sdp}
+(tamaños de bloque, índices de entradas no nulas).
+
+Los operadores de mutación fueron diseñados para cubrir distintas escalas de movimiento en el espacio de instancias: desde ajustes finos de
+sparsity (add/remove entries) hasta reestructuraciones globales del problema (split/merge blocks, add/remove constraints). Esta jerarquía
+permite balancear exploración y explotación durante la evolución de forma adaptativa, según el progreso observado hacia el objetivo.
+
+El modo de exploración autónoma complementa el modo dirigido al eliminar la necesidad de especificar manualmente los puntos objetivo: el motor
+identifica y puebla regiones vacías del espacio de forma iterativa, lo que es especialmente útil para detectar zonas del espacio donde todos los
+solvers tienen dificultades, y que por lo tanto no están representadas en el conjunto de instancias original.
+
+\section{Métrica de Rendimiento y Criterio de Buen Desempeño}
+\label{sec:metrica}
+
+El tiempo de \acrshort{cpu} fue seleccionado como métrica principal de rendimiento por ser la medida más directamente comparable entre solvers de
+distintas familias algorítmicas e implementaciones. Las métricas alternativas, como el número de iteraciones, son incomparables entre métodos de
+punto interior y métodos de Lagrangiano aumentado dado que cada iteración tiene un costo muy diferente.
+
+El etiquetado binario de rendimiento (bueno/malo) sigue el criterio de umbral relativo de \acrshort{isa}:
+un solver se considera \textit{bueno} en una instancia si su tiempo de \acrshort{cpu} no supera el $55\%$ del tiempo del solver más rápido en esa
+instancia ($\beta = 0.55$). Este umbral, recomendado por la metodología, tolera una penalización moderada respecto al óptimo sin considerar
+competitivos a solvers que resulten significativamente más lentos. Las instancias para las que ningún solver converge dentro del límite de
+$3\,000$ segundos se excluyen del análisis de rendimiento.
+
+\section{Herramientas Computacionales}
+\label{sec:herramientas}
+
+El experimento se apoya en un conjunto de herramientas cuya elección responde a criterios de reproducibilidad,
+disponibilidad y compatibilidad con los componentes del pipeline.
+
+\textbf{Python 3.11}. Lenguaje principal de orquestación del pipeline. Se utiliza para la extracción de características,
+el preprocesamiento de instancias, la ejecución del algoritmo genético y la interfaz con los solvers externos. Las
+bibliotecas centrales empleadas son \texttt{numpy} y \texttt{scipy} para álgebra lineal dispersa, \texttt{networkx}
+para el análisis del grafo agregado, y \texttt{subprocess} para la invocación de ejecutables externos.
+
+\textbf{MATLAB R2026b}. Entorno de ejecución requerido por SDPT3, SeDuMi y SDPNAL+, que están implementados
+como paquetes MATLAB nativos. Python llama a MATLAB a través del motor de Python de MATLAB
+(\texttt{matlab.engine}), lo que permite integrar los solvers MATLAB en el pipeline sin abandonar Python como
+lenguaje de control.
+
+\textbf{MATILDA}. Toolbox MATLAB que implementa la metodología \acrshort{isa} completa: preprocesamiento y normalización
+de características (etapa PRELIM), selección de características relevantes (etapa SIFTED), proyección al espacio de
+instancias (etapa PILOT), clasificación de rendimiento (etapa PYTHIA) y delimitación de footprints (etapa TRACE).
+Se ejecuta desde Python mediante \texttt{matlab.engine}, recibiendo las matrices de características y rendimiento
+como entrada y retornando las coordenadas del espacio proyectado.
+
+\textbf{Scripts propios}. Se desarrollaron módulos Python para la extracción de las quince características
+estructurales, la conversión y validación de instancias al formato \texttt{.dat-s}, la implementación del algoritmo
+genético y la automatización del benchmarking. Estos scripts están disponibles en el repositorio del proyecto y
+constituyen la contribución de software de este trabajo.
+
+\textbf{Sistema operativo}. El experimento se ejecutó sobre Windows 11 Pro (64 bits, x64), 
+con procesador Intel Core i7-10700 a 2.90\,GHz, 32\,GB de RAM y tarjeta gráfica NVIDIA
+GeForce RTX 3080 (10\,GB). Las restricciones de hardware determinan el límite de tiempo de $3\,000$ segundos
+
+\textbf{Control de versiones}. El código fuente, los scripts de extracción de características, el algoritmo genético
+y la documentación del experimento se gestionan con Git y se alojan en GitHub, lo que garantiza la trazabilidad de
+los cambios y la reproducibilidad de los resultados.
