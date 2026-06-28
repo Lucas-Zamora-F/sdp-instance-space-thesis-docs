@@ -1,2 +1,75 @@
 \chapter{Metodología}
 \label{ch:metodo}
+
+% Descripción detallada de los métodos, procedimientos y herramientas utilizados.
+% Máximo 20 páginas.
+
+\section{Enfoque metodológico}
+\label{sec:enfoque}
+
+Esta investigación adopta un enfoque empírico-computacional estructurado en cinco etapas
+secuenciales, diseñadas para dar respuesta a cada uno de los objetivos específicos planteados
+en el Capítulo~\ref{ch:intro}.
+El eje central del trabajo es el framework \acrshort{isa}, que opera como hilo conductor
+desde la caracterización de las instancias hasta la interpretación del rendimiento de los
+solvers y la generación de nuevas instancias.
+
+El enfoque no parte de un modelo analítico predefinido del comportamiento de los solvers,
+sino que lo \textit{infiere} a partir de la evidencia experimental generada sobre un conjunto
+diverso de instancias.
+Esto lo distingue de los estudios de complejidad teórica y lo sitúa dentro de la corriente
+de la ciencia algorítmica basada en datos, donde la observación sistemática del comportamiento
+empírico es el fundamento del conocimiento generado.
+
+\section{Flujo general de la metodología}
+\label{sec:flujo}
+
+La primera etapa consiste en la \textit{recopilación y preprocesamiento} de instancias
+\acrshort{sdp} provenientes de colecciones de benchmarks estándar de la literatura.
+Todas las instancias se estandarizan al formato SDPA sparse, que representa el problema
+en forma primal estándar y constituye el formato de entrada común a la mayoría de los
+solvers \acrshort{sdp} modernos.
+Esta etapa establece el conjunto de instancias experimentales sobre el que se construye el resto del análisis.
+
+La segunda etapa comprende la \textit{extracción de características estructurales} a partir
+de cada instancia.
+Se diseña un conjunto de métricas computables directamente desde la representación SDPA
+sparse, que capturan propiedades geométricas y algebraicas del problema: estructura de
+bloques, densidad de los datos, conectividad del grafo de variables y propiedades de
+chordalidad de la matriz de restricciones.
+Estas características actúan como coordenadas del espacio de instancias y son el insumo
+principal del pipeline \acrshort{isa}.
+
+La tercera etapa corresponde al \textit{benchmarking de solvers}.
+Un conjunto representativo de solvers \acrshort{sdp}
+—que cubre los principales paradigmas algorítmicos disponibles—
+se ejecuta sobre cada instancia bajo condiciones controladas de hardware y parámetros.
+El desempeño se cuantifica mediante la métrica de tiempo de cómputo con la cual se construye el perfil de
+rendimiento de cada algoritmo.
+
+La cuarta etapa aplica el \textit{framework \acrshort{isa}} propiamente dicho.
+Las instancias, representadas por sus vectores de características, se proyectan a un espacio
+bidimensional mediante el algoritmo PILOT, que combina selección de características y
+proyección lineal de forma que las regiones del espacio queden asociadas a diferencias
+significativas en el rendimiento de los solvers.
+Sobre este espacio se entrena el clasificador PYTHIA, que delimita las regiones de ventaja
+comparativa de cada algoritmo y permite cuantificar la footprint de buen desempeño de cada
+solver~\cite{smith-milesInstanceSpaceAnalysis2023}.
+
+Finalmente, la quinta etapa introduce la \textit{generación evolutiva de instancias}.
+En aquellas regiones del espacio de instancias donde la densidad experimental es
+insuficiente para extraer conclusiones robustas, se emplea un \acrfull{ga} que evoluciona
+instancias existentes hacia dichas regiones objetivo.
+El \acrshort{ga} opera directamente sobre la representación SDPA sparse de las instancias,
+utilizando como función de aptitud la distancia al vector de características de la región
+objetivo en el espacio proyectado.
+Las instancias generadas se validan computacionalmente
+—verificando factibilidad y estructura \acrshort{sdp}— y se reintegran al conjunto de instancias para
+enriquecer el análisis.
+
+El conjunto de las cinco etapas conforma un pipeline reproducible, implementado en Python
+con llamadas a MATLAB para los componentes \acrshort{isa}, y ejecutable localmente desde
+la aplicación Streamlit desarrollada en paralelo a este informe.
+La Figura~\ref{fig:pipeline} ilustra el flujo completo del proceso.
+
+\input{../attachments/fig_pipeline}

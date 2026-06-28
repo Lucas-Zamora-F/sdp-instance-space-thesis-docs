@@ -1,0 +1,56 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance  = 0.7cm,
+    etapa/.style   = {
+        rectangle, rounded corners = 5pt,
+        draw = black!55, line width = 0.55pt,
+        text width = 10cm, minimum height = 1.3cm,
+        align = center, font = \small
+    },
+    flecha/.style  = {->, >= Stealth, line width = 1pt},
+    nota/.style    = {font = \scriptsize\itshape, text = black!45}
+]
+
+\node[etapa, fill = gray!12] (e1) {
+    \textbf{Etapa 1 — Recopilación de instancias}\\[3pt]
+    \footnotesize Benchmarks estándar $\longrightarrow$ formato SDPA sparse
+};
+
+\node[etapa, fill = blue!7, below = of e1] (e2) {
+    \textbf{Etapa 2 — Extracción de características}\\[3pt]
+    \footnotesize Estructura de bloques $\cdot$ densidad $\cdot$ conectividad $\cdot$ chordalidad
+};
+
+\node[etapa, fill = blue!7, below = of e2] (e3) {
+    \textbf{Etapa 3 — Benchmarking de solvers}\\[3pt]
+    \footnotesize Tiempo de cómputo $\cdot$ iteraciones $\cdot$ calidad de solución
+};
+
+\node[etapa, fill = teal!10, below = of e3] (e4) {
+    \textbf{Etapa 4 — Análisis ISA}\\[3pt]
+    \footnotesize Proyección PILOT $\cdot$ clasificador PYTHIA $\longrightarrow$ espacio de instancias 2D
+};
+
+\node[etapa, fill = orange!12, below = of e4] (e5) {
+    \textbf{Etapa 5 — Generación evolutiva}\\[3pt]
+    \footnotesize Algoritmo Genético $\longrightarrow$ instancias sintéticas hacia regiones subpobladas
+};
+
+\draw[flecha] (e1) -- (e2);
+\draw[flecha] (e2) -- (e3);
+\draw[flecha] (e3) -- (e4);
+\draw[flecha] (e4) -- (e5);
+
+% Retroalimentación: E5 → E1
+\draw[flecha, dashed, black!40]
+    (e5.east) -- ++(1.8, 0) coordinate (aux) |- (e1.east);
+\node[nota] at ($(aux)!0.5!(aux |- e3)$) [right = 3pt]
+    {retroalimentación};
+
+\end{tikzpicture}
+\caption{Pipeline metodológico de la investigación.
+         La flecha discontinua indica que las instancias generadas en la Etapa~5
+         se incorporan al conjunto experimental y realimentan el análisis desde la Etapa~1.}
+\label{fig:pipeline}
+\end{figure}
