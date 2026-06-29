@@ -6,51 +6,6 @@ qué solvers se integraron, qué características se extrajeron, qué herramient
 cómo se configuró el algoritmo genético. Cada elección responde a criterios técnicos y metodológicos explícitos
 que se documentan a continuación.
 
-\section{Selección de Bibliotecas de Instancias}
-\label{sec:seleccion_instancias}
-
-A diferencia de áreas como la programación lineal entera, donde repositorios como MIPLIB
-concentran miles de instancias bajo un formato y criterio de calidad unificados, la programación semidefinida carece
-de un repositorio análogo de referencia única. Las instancias de \acrshort{sdp} se encuentran dispersas entre
-colecciones mantenidas de forma independiente, con formatos heterogéneos, escalas distintas y orígenes aplicados muy
-variados. Esta fragmentación obligó a extraer instancias de múltiples fuentes y normalizarlas a un formato común
-antes de poder realizar cualquier análisis comparativo.
-
-La calidad de un análisis del espacio de instancias depende directamente de que estas cubran de forma amplia y
-representativa el espacio de problemas posibles. Una base de instancias sesgada
-hacia una sola fuente produciría un espacio de instancias con regiones artificialmente vacías que reflejarían
-la ausencia de diversidad experimental, no una característica genuina del problema \cite{smith-milesInstanceSpaceAnalysis2023}.
-
-Se seleccionaron cuatro bibliotecas de benchmarks con criterios de diversidad estructural y aplicada:
-
-\textbf{SDPLIB 1.2}\cite{borchersSDPLIB12Library1999}. La biblioteca de referencia histórica del área, con
-instancias provenientes de control óptimo, diseño estructural, localización de antenas y relajaciones semidefinidas
-de problemas combinatoriales. Su amplio uso en la literatura facilita la comparación con trabajos previos.
-
-\textbf{Benchmarks de Hans Mittelmann}\cite{PlatoasueduFtpSparse_sdphtml}. Colección de instancias de
-mediana y gran escala mantenida de forma independiente, que incluye los problemas \texttt{kocvara\_pennon} provenientes
-de optimización estructural con variables de forma. Esta fuente complementa SDPLIB con instancias de mayor dimensión que
-estresan el comportamiento de los solvers en regímenes de memoria y tiempo.
-
-\textbf{DIMACS Library}\cite{DIMACSLibraryMixeda}. Problemas de programas semidefinidos-cuadráticos-lineales mixtos,
-originalmente diseñados como punto de referencia para evaluar el avance de los solvers de propósito general. Aporta
-instancias con mezcla de variables continuas y semidefinidas.
-
-\textbf{Biq Mac Library}\cite{BiqMacLibrarya}. Problemas de corte máximo (\textit{max-cut}) formulados como
-relajaciones \acrshort{sdp}, con estructura de grafos densos. Constituyen una clase estructuralmente distinta: una sola
-restricción por arista, bloque único de gran dimensión, y densidad alta. Esto introduce una región del espacio de instancias
-que las otras tres fuentes no cubren.
-
-En conjunto, las cuatro fuentes abarcan orígenes aplicados heterogéneos ---control, geometría, combinatoria, diseño
-estructural--- y un rango amplio de valores para las características extraídas, lo que favorece la separabilidad de regiones
-en el espacio de instancias.
-
-Cabe notar que no todas las instancias de estas fuentes corresponden a programas semidefinidos puros en su formulación
-original: en varios casos provienen de problemas de optimización más generales ---mixtos, cuadráticos o combinatoriales---
-cuya relajación semidefinida constituye la instancia efectivamente analizada. Esta práctica es estándar en el área y no
-compromete la validez del análisis, dado que las características se extraen directamente de la formulación SDP
-resultante, independientemente del origen del problema.
-
 \section{Selección de Solvers}
 \label{sec:seleccion_solvers}
 
@@ -59,28 +14,34 @@ instancias refleje diferencias genuinas de rendimiento entre familias de método
 de una misma familia.
 
 \begin{itemize}
-    \item \textbf{SDPT3 4.0}\cite{tohImplementationUsageSDPT32012a}: método de punto interior primal-dual con
-    predictor-corrector HKM/NT, implementado en MATLAB con núcleos MEX compilados en C. Es el solver más citado en la literatura de
-    benchmarking \acrshort{sdp} y sirve como referencia de comparación.
+    \item \textbf{SDPT3 4.0}\cite{tohImplementationUsageSDPT32012a}: desarrollado por Kim-Chuan Toh,
+    Michael J. Todd y Reha H. Tütüncü. Implementa un método de punto interior primal-dual con
+    predictor-corrector HKM/NT, en MATLAB con núcleos MEX compilados en C. Es uno de los solvers
+    más citados en la literatura de benchmarking \acrshort{sdp} y sirve como referencia de comparación.
 
-    \item \textbf{SeDuMi 1.3.8}\cite{sturmUSINGSEDUMI1022001}: método de punto interior primal-dual basado en el paso de Nesterov-Todd,
-    con soporte para conos de segundo orden y semidefinidos. Comparte familia algorítmica con SDPT3 pero difiere en la implementación del
-    sistema de búsqueda de dirección.
+    \item \textbf{SeDuMi 1.3.8}\cite{sturmUSINGSEDUMI1022001}: desarrollado originalmente por Jos F. Sturm.
+    Implementa un método de punto interior primal-dual basado en el paso de Nesterov-Todd, con soporte
+    para conos de segundo orden y semidefinidos. Comparte familia algorítmica con SDPT3, pero difiere
+    en la implementación del sistema de búsqueda de dirección.
 
-    \item \textbf{SDPA 7.3.9}\cite{SDPAOfficialPage}: método de punto interior primal-dual implementado en C++, que se integró como
-    ejecutable externo. A diferencia de los anteriores, no depende de MATLAB, lo que elimina el overhead del intérprete para instancias
-    medianas.
+    \item \textbf{SDPA 7.3.9}\cite{SDPAOfficialPage}: desarrollado por el grupo del proyecto SDPA, asociado
+    a trabajos de Makoto Yamashita, Katsuki Fujisawa, Masakazu Kojima y colaboradores. Implementa un
+    método de punto interior primal-dual en C++ y se integró como ejecutable externo. A diferencia de los
+    anteriores, no depende de MATLAB, lo que elimina el overhead del intérprete para instancias medianas.
 
-    \item \textbf{SDPNAL+ 1.0}\cite{}: método de Lagrangiano aumentado con paso de Newton-CG para el
-    subproblema, diseñado específicamente para instancias de gran escala donde los
-    métodos de punto interior resultan prohibitivos en memoria. Representa una familia algorítmica distinta a los anteriores.
+    \item \textbf{SDPNAL+ 1.0}\cite{}: desarrollado por Defeng Sun, Kim-Chuan Toh, Yancheng Yuan y
+    Xin-Yuan Zhao. Implementa un método de Lagrangiano aumentado con paso de Newton-CG para el
+    subproblema, diseñado específicamente para instancias de gran escala donde los métodos de punto
+    interior resultan prohibitivos en memoria. Representa una familia algorítmica distinta a los anteriores.
 
-    \item \textbf{DSDP 5.8}\cite{bensonDSDP5SoftwareSemidefinite}: método de escalamiento dual, que construye iterados solo en el espacio
-    dual y evalúa factibilidad primal a posteriori. Su bajo requerimiento de memoria lo hace adecuado para instancias con muchas
-    restricciones.
+    \item \textbf{DSDP 5.8}\cite{bensonDSDP5SoftwareSemidefinite}: desarrollado por Steven J. Benson,
+    Yinyu Ye y Xiong Zhang. Implementa un método de escalamiento dual, que construye iterados solo en
+    el espacio dual y evalúa factibilidad primal a posteriori. Su bajo requerimiento de memoria lo hace
+    destacar para instancias con muchas restricciones.
 
-    \item \textbf{CSDP 6.2.0}\cite{borchersCSDPLibrarySemide}: método de punto interior primal-dual implementado en C, portátil y
-    sin dependencias externas. Permite una línea base de comparación limpia, independiente de entornos MATLAB.
+    \item \textbf{CSDP 6.2.0}\cite{borchersCSDPLibrarySemide}: desarrollado por Brian Borchers. Implementa
+    un método de punto interior primal-dual en C, portátil y sin dependencias externas. Permite una línea
+    base de comparación limpia, independiente de entornos MATLAB.
 \end{itemize}
 
 La combinación de tres solvers de punto interior primal-dual (SDPT3, SeDuMi, SDPA), un método de Lagrangiano aumentado (SDPNAL+),
@@ -90,50 +51,159 @@ espacio de instancias sean atribuibles a propiedades estructurales del problema 
 \section{Selección del Formato Unificado}
 \label{sec:seleccion_formato}
 
-El formato SDPA sparse (\texttt{.dat-s}) fue adoptado como representación canónica por tres razones. Primero, es el formato nativo de
-SDPLIB y el estándar de facto en benchmarking \acrshort{sdp}, lo que
-facilita la incorporación de nuevas fuentes sin conversión adicional. Segundo, todos los solvers seleccionados lo leen directamente o
+El formato SDPA sparse (\texttt{.dat-s}) \cite{SDPAFormat} fue adoptado como representación canónica por tres razones. Primero, es el formato nativo de
+SDPLIB. Segundo, todos los solvers seleccionados lo leen directamente o
 disponen de rutinas de conversión maduras. Tercero, la representación sparse por cuádruplas $(\text{matno}, \text{blkno}, i, j, v)$
 almacena únicamente las entradas no nulas del triángulo superior, lo que es eficiente para las instancias típicamente dispersas de este problema.
-La normalización al formato \texttt{.dat-s} se describe en la Sección~\ref{sec:normalizacion}.
 
-\section{Selección de Características Estructurales}
+\section{Selección de Features}
 \label{sec:seleccion_features}
 
 Las características deben satisfacer tres requisitos para ser útiles en \acrshort{isa}: (i) computabilidad directa desde la instancia sin resolverla,
 para garantizar independencia entre features y rendimiento; (ii) relevancia para la dificultad del problema desde un punto de vista teórico o empírico;
 y (iii) diversidad suficiente para separar distintas familias de instancias en el espacio proyectado.
 
-Las quince características seleccionadas (descritas en la Sección~\ref{sec:features}) se agrupan en cinco familias que cubren dimensiones ortogonales
-de la estructura de una instancia \acrshort{sdp}:
+Las quince características seleccionadas se calculan directamente desde el archivo
+\texttt{.dat-s}, sin resolver la instancia. Para una instancia con $m$ matrices de restricción $A_1,\ldots,A_m$, matriz objetivo
+$C$ y tamaños de bloque $s_1,\ldots,s_B$, se usan los tamaños absolutos $n_b=|s_b|$. Si $s_b<0$, el bloque se interpreta como
+diagonal. A partir de las entradas no nulas se construye además el grafo agregado por bloque $G_b=(V_b,E_b)$, donde
+$V_b=\{1,\ldots,n_b\}$ y existe una arista $\{i,j\}\in E_b$, con $i\neq j$, si la posición $(i,j)$ aparece como no nula en
+$C$ o en alguna matriz de restricción.
 
 \begin{itemize}
-    \item \textbf{Tamaño y bloqueo:} capturan la complejidad computacional básica de la factorización de Cholesky, que domina el costo por iteración
-    de los métodos de punto interior.
+    \item \textbf{Tamaño y bloqueo.} Estas características describen la dimensión básica de la formulación y la estructura de bloques de la variable
+    semidefinida:
+    \begin{itemize}
+        \item \textbf{Número de restricciones (\texttt{n\_constraints}):} corresponde al valor $m$ de la cabecera SDPA:
+        \[
+            f_1 = m.
+        \]
 
-    \item \textbf{Sparsity:} determina si es posible explotar técnicas de álgebra lineal dispersa para reducir el costo de la formación y factorización
-    del sistema de Schur.
+        \item \textbf{Número de bloques (\texttt{n\_blocks}):} corresponde al número de bloques diagonales declarados en la variable matricial:
+        \[
+            f_2 = B.
+        \]
 
-    \item \textbf{Grafo agregado:} la estructura de conectividad de las matrices de restricción influye directamente en el llenado de la factorización
-    de Cholesky del sistema de ecuaciones normales.
+        \item \textbf{Tamaño promedio de bloque (\texttt{avg\_block\_size}):} mide el orden medio de los bloques, usando valor absoluto para bloques
+        diagonales:
+        \[
+            f_3 = \frac{1}{B}\sum_{b=1}^{B} n_b.
+        \]
 
-    \item \textbf{Estructura chordal y ancho de árbol:} la chordalidad del grafo agregado es una condición suficiente para explotar descomposiciones de
-    árbol de cliques en métodos de punto interior. El ancho de árbol aproximado cuantifica qué tan lejos
-    está la instancia de ser tratable mediante esta técnica.
+        \item \textbf{Tamaño máximo de bloque (\texttt{max\_block\_size}):} registra el bloque de mayor orden:
+        \[
+            f_4 = \max_{1\leq b\leq B} n_b.
+        \]
+    \end{itemize}
 
-    \item \textbf{Matriz de Gram de Schur:} el condicionamiento del sistema de ecuaciones normales es un predictor conocido de la dificultad numérica de
-    los métodos de punto interior: sistemas mal condicionados requieren iteraciones adicionales o precondicionamiento.
+    \item \textbf{Dispersión y solapamiento.} Estas características cuantifican cuántas posiciones nulas existen y cuánto se superponen las matrices
+    de restricción:
+    \begin{itemize}
+        \item \textbf{Sparsity (\texttt{sparsity}):} es la fracción de posiciones nulas en las matrices $C,A_1,\ldots,A_m$, respecto de las posiciones
+        almacenables del triángulo superior. Si
+        \[
+            u(s_b)=
+            \begin{cases}
+                n_b, & s_b<0,\\
+                n_b(n_b+1)/2, & s_b>0,
+            \end{cases}
+        \]
+        y $\mathrm{nnz}$ es el número de entradas no nulas almacenadas, entonces
+        \[
+            f_5 = 1-\frac{\mathrm{nnz}}{(m+1)\sum_{b=1}^{B}u(s_b)}.
+        \]
+
+        \item \textbf{Densidad de solapamiento entre restricciones (\texttt{constraint\_overlap\_density}):} construye un grafo con vértices
+        $A_1,\ldots,A_m$, donde dos restricciones son adyacentes si comparten al menos una posición no nula. Si $E_{\mathrm{ov}}$ es el conjunto de
+        aristas de ese grafo,
+        \[
+            f_6 = \frac{|E_{\mathrm{ov}}|}{m(m-1)/2},
+        \]
+        con valor $0$ cuando $m<2$.
+    \end{itemize}
+
+    \item \textbf{Grafo agregado.} Estas características resumen la conectividad inducida por las posiciones no nulas dentro de cada bloque:
+    \begin{itemize}
+        \item \textbf{Densidad del grafo agregado (\texttt{aggregate\_graph\_density}):} mide la fracción de aristas presentes en los grafos agregados
+        por bloque:
+        \[
+            f_7 = \frac{\sum_{b=1}^{B}|E_b|}{\sum_{b=1}^{B} n_b(n_b-1)/2}.
+        \]
+
+        \item \textbf{Número de componentes del grafo agregado (\texttt{aggregate\_graph\_n\_components}):} suma las componentes conexas de todos los
+        grafos agregados, incluyendo vértices aislados:
+        \[
+            f_8 = \sum_{b=1}^{B}\mathrm{cc}(G_b).
+        \]
+
+        \item \textbf{Fracción de la componente más grande (\texttt{aggregate\_graph\_largest\_component\_frac}):} para cada bloque calcula el tamaño
+        de su mayor componente conexa y reporta la fracción máxima:
+        \[
+            f_9 = \max_{1\leq b\leq B}\frac{\max_{S\in \mathrm{CC}(G_b)} |S|}{n_b}.
+        \]
+    \end{itemize}
+
+    \item \textbf{Estructura chordal y ancho de árbol.} Estas características se calculan aplicando una heurística determinista \textit{min-fill} a
+    cada grafo agregado:
+    \begin{itemize}
+        \item \textbf{Ancho de árbol aproximado (\texttt{approx\_treewidth}):} toma el mayor grado de eliminación observado. Si $\pi_b$ es el orden de
+        eliminación y $N_{\pi_b}^{+}(v)$ son los vecinos activos de $v$ al eliminarlo,
+        \[
+            f_{10} = \max_{b}\max_{v\in V_b}|N_{\pi_b}^{+}(v)|.
+        \]
+
+        \item \textbf{Razón de llenado chordal (\texttt{chordal\_fill\_ratio}):} sea $F_b$ el conjunto de aristas agregadas para completar
+        chordalmente cada $G_b$. La característica es
+        \[
+            f_{11} = \frac{\sum_b |E_b|+\sum_b |F_b|}{\sum_b |E_b|},
+        \]
+        y se define como $1$ cuando no hay aristas originales.
+
+        \item \textbf{Tamaño máximo de clique chordal (\texttt{max\_chordal\_clique\_size}):} registra el mayor clique inducido durante la eliminación
+        \textit{min-fill}:
+        \[
+            f_{12} = \max_b\max_{v\in V_b}\left(|N_{\pi_b}^{+}(v)|+1\right).
+        \]
+
+        \item \textbf{Entropía de tamaños de clique (\texttt{clique\_size\_entropy}):} sea $\mathcal{K}$ el multiconjunto de tamaños de clique
+        registrados durante la eliminación \textit{min-fill}, y sea $p_k$ la frecuencia relativa del tamaño $k$. Entonces
+        \[
+            f_{13} = -\sum_k p_k\log_2 p_k.
+        \]
+    \end{itemize}
+
+    \item \textbf{Matriz de Gram de Schur.} Estas características describen la estructura algebraica del sistema de Schur inducido por las matrices de
+    restricción:
+    \begin{itemize}
+        \item \textbf{Densidad de la matriz de Gram de Schur (\texttt{schur\_gram\_density}):} define la matriz
+        $G\in\mathbb{R}^{m\times m}$ mediante el producto de Frobenius entre restricciones,
+        \[
+            G_{ij}=\langle A_i,A_j\rangle_F.
+        \]
+        La característica es la fracción de entradas no nulas de esta matriz:
+        \[
+            f_{14} = \frac{\mathrm{nnz}(G)}{m^2}.
+        \]
+
+        \item \textbf{Condicionamiento logarítmico de Gram de Schur (\texttt{schur\_gram\_condition\_log}):} calcula el condicionamiento espectral de
+        una versión regularizada de $G$:
+        \[
+            f_{15} = \log_{10}\kappa_2(G+\varepsilon I),
+            \qquad
+            \varepsilon=10^{-12}\max(1,\lambda_{\max}(G)).
+        \]
+    \end{itemize}
 \end{itemize}
 
 La etapa SIFTED de MATILDA realiza una selección automática adicional sobre estas quince características antes de construir la proyección, descartando
-las que resulten redundantes o de baja relevancia para la separación de rendimiento entre solvers (Sección~\ref{sec:isa}).
+las que resulten redundantes o de baja relevancia para la separación de rendimiento entre solvers \cite{smith-milesInstanceSpaceAnalysis2023}.
 
 \section{Selección de MATILDA como Herramienta de ISA}
 \label{sec:seleccion_matilda}
 
 MATILDA es la implementación de referencia oficial de la metodología \acrshort{isa} propuesta por
 Smith-Miles y Muñoz. Frente a alternativas de reducción de dimensionalidad convencionales (PCA, t-SNE, UMAP),
-MATILDA construye una proyección explícitamente optimizada para maximizar la correlación entre las coordenadas del espacio y el rendimiento de los algoritmos,
+MATILDA construye una proyección explícitamente optimizada para maximizar la correlación entre las coordenadas del espacio y el rendimiento de los algoritmos \cite{smith-milesInstanceSpaceAnalysis2023},
 lo que produce un espacio interpretable donde la posición de una instancia predice qué solver la resolverá mejor. Esta propiedad es esencial para el
 objetivo del trabajo: no solo describir el espacio, sino orientar la generación de nuevas instancias hacia regiones con comportamiento deseado.
 
@@ -144,31 +214,49 @@ que son las salidas primarias de interés para el análisis comparativo de los s
 \label{sec:disenio_ga}
 
 La elección de un algoritmo genético como mecanismo de generación de instancias sintéticas sigue directamente el marco de Smith-Miles y
-Bowly, que demuestra que la evolución en el espacio de instancias es una estrategia efectiva para
-producir instancias con propiedades estructurales controladas sin requerir información de gradiente respecto al espacio proyectado. Esta
-propiedad es importante dado que la proyección PILOT es no diferenciable con respecto a las entradas discretas de una instancia \acrshort{sdp}
-(tamaños de bloque, índices de entradas no nulas).
+Bowly \cite{smith-milesGeneratingNewTest2015}, que demuestra que la evolución en el espacio de instancias es una estrategia efectiva para
+producir instancias con propiedades controladas sin requerir información de gradiente respecto al espacio proyectado. En dicho trabajo, los
+autores proponen seleccionar puntos objetivo en regiones poco pobladas del espacio de instancias y evolucionar nuevas instancias cuya posición
+proyectada se acerque a esos puntos. Esta idea es especialmente adecuada para este estudio, dado que la proyección PILOT no es diferenciable con
+respecto a las entradas discretas de una instancia \acrshort{sdp}, como los tamaños de bloque, los índices de las entradas no nulas y la cantidad de
+restricciones.
 
-Los operadores de mutación fueron diseñados para cubrir distintas escalas de movimiento en el espacio de instancias: desde ajustes finos de
-sparsity (add/remove entries) hasta reestructuraciones globales del problema (split/merge blocks, add/remove constraints). Esta jerarquía
-permite balancear exploración y explotación durante la evolución de forma adaptativa, según el progreso observado hacia el objetivo.
+El motor genético implementado adapta este principio al formato SDPA sparse. Cada individuo de la población corresponde a una instancia candidata
+\texttt{.dat-s}, definida por su número de restricciones, su lista de bloques, el vector $b$ y el conjunto disperso de entradas
+$(\text{matno},\text{blkno},i,j,v)$. La población inicial se construye a partir de instancias existentes, que sirven como semillas estructuralmente
+válidas. Sobre ellas se aplican operadores de variación que modifican la estructura de la instancia sin abandonar el dominio \acrshort{sdp}: cambios
+en coeficientes no nulos, inserción o eliminación de entradas dispersas, incorporación o eliminación de restricciones, y ajustes sobre la estructura
+de bloques. Después de cada modificación, la instancia se normaliza nuevamente al formato SDPA sparse para preservar índices válidos, simetría por
+bloque y consistencia entre cabecera y datos.
 
-El modo de exploración autónoma complementa el modo dirigido al eliminar la necesidad de especificar manualmente los puntos objetivo: el motor
-identifica y puebla regiones vacías del espacio de forma iterativa, lo que es especialmente útil para detectar zonas del espacio donde todos los
-solvers tienen dificultades, y que por lo tanto no están representadas en el conjunto de instancias original.
+El ciclo evolutivo sigue el esquema general propuesto por Smith-Miles y Bowly \cite{smith-milesGeneratingNewTest2015}: para cada generación se
+decodifican las instancias candidatas, se extraen sus quince características estructurales, se proyectan al espacio de instancias usando el modelo
+\acrshort{isa} ya construido, y se asigna a cada individuo una aptitud. Luego, los individuos con mejor aptitud tienen mayor probabilidad de
+contribuir a la siguiente generación mediante selección, cruce y mutación. En esta adaptación, el cruce combina componentes de dos instancias
+padre, mientras que la mutación introduce cambios locales o estructurales. La presión selectiva permite conservar instancias que avanzan hacia la
+región objetivo, pero las mutaciones mantienen diversidad suficiente para evitar que la población colapse prematuramente en variantes triviales de
+una misma semilla.
 
-\section{Métrica de Rendimiento y Criterio de Buen Desempeño}
-\label{sec:metrica}
+La función de fitness se basa en la distancia entre la posición proyectada de la instancia candidata y un punto objetivo del espacio. Sea $x$ una
+instancia candidata, $\phi(x)\in\mathbb{R}^{15}$ su vector de características normalizadas y $P\in\mathbb{R}^{2\times 15}$ la transformación lineal
+aprendida por la etapa PILOT. La posición de la instancia en el espacio proyectado se calcula como
+\[
+    z(x)=P\phi(x).
+\]
+Si $z^\star\in\mathbb{R}^{2}$ es el punto objetivo, la aptitud se define como una función inversamente proporcional a la distancia euclidiana:
+\[
+    \mathrm{fitness}(x)=\frac{1}{\|z(x)-z^\star\|_2^2+\varepsilon},
+\]
+donde $\varepsilon>0$ evita divisiones por cero. Esta expresión sigue la formulación de Smith-Miles y Bowly, quienes plantean maximizar una función
+equivalente a minimizar la distancia al punto objetivo en el espacio de instancias \cite{smith-milesGeneratingNewTest2015}. En consecuencia, una
+instancia recibe mayor fitness mientras más cerca se encuentre de la región que se desea poblar.
 
-El tiempo de \acrshort{cpu} fue seleccionado como métrica principal de rendimiento por ser la medida más directamente comparable entre solvers de
-distintas familias algorítmicas e implementaciones. Las métricas alternativas, como el número de iteraciones, son incomparables entre métodos de
-punto interior y métodos de Lagrangiano aumentado dado que cada iteración tiene un costo muy diferente.
+Además de la cercanía al objetivo, el motor penaliza candidatos inválidos o degenerados. Una instancia que no pueda escribirse consistentemente en
+formato SDPA sparse, que produzca features no finitas, o que viole restricciones básicas de tamaño y estructura, recibe aptitud nula y no se
+propaga. Esta penalización es necesaria porque los operadores genéticos actúan sobre una representación discreta y pueden generar combinaciones
+intermedias que no corresponden a instancias \acrshort{sdp} utilizables. De este modo, la búsqueda evolutiva combina exploración en el espacio
+estructural de las instancias con una presión explícita hacia regiones subrepresentadas del espacio \acrshort{isa}.
 
-El etiquetado binario de rendimiento (bueno/malo) sigue el criterio de umbral relativo de \acrshort{isa}:
-un solver se considera \textit{bueno} en una instancia si su tiempo de \acrshort{cpu} no supera el $55\%$ del tiempo del solver más rápido en esa
-instancia ($\beta = 0.55$). Este umbral, recomendado por la metodología, tolera una penalización moderada respecto al óptimo sin considerar
-competitivos a solvers que resulten significativamente más lentos. Las instancias para las que ningún solver converge dentro del límite de
-$3\,000$ segundos se excluyen del análisis de rendimiento.
 
 \section{Herramientas Computacionales}
 \label{sec:herramientas}
@@ -191,6 +279,12 @@ de características (etapa PRELIM), selección de características relevantes (e
 instancias (etapa PILOT), clasificación de rendimiento (etapa PYTHIA) y delimitación de footprints (etapa TRACE).
 Se ejecuta desde Python mediante \texttt{matlab.engine}, recibiendo las matrices de características y rendimiento
 como entrada y retornando las coordenadas del espacio proyectado.
+
+\textbf{Electron}. Framework utilizado para desarrollar la aplicación de escritorio que integra el pipeline experimental.
+La interfaz permite ejecutar y monitorear las etapas principales del flujo de trabajo, incluyendo preparación de instancias,
+extracción de características, benchmarking, construcción del espacio de instancias y visualización de resultados. Electron
+facilita empaquetar la interfaz web local junto con los procesos de orquestación en Python, manteniendo una aplicación
+reproducible y ejecutable en el entorno de experimentación.
 
 \textbf{Scripts propios}. Se desarrollaron módulos Python para la extracción de las quince características
 estructurales, la conversión y validación de instancias al formato \texttt{.dat-s}, la implementación del algoritmo

@@ -4,7 +4,7 @@
 % Descripción detallada de los métodos, procedimientos y herramientas utilizados.
 % Máximo 20 páginas.
 
-\section{Enfoque metodológico}
+\section{Enfoque metodológico}%Listo
 \label{sec:enfoque}
 
 Esta investigación adopta un enfoque empírico-computacional estructurado en cinco etapas
@@ -21,35 +21,36 @@ Esto lo distingue de los estudios de complejidad teórica y lo sitúa dentro de 
 de la ciencia algorítmica basada en datos, donde la observación sistemática del comportamiento
 empírico es el fundamento del conocimiento generado.
 
-\section{Flujo general de la metodología}
+\section{Flujo general de la metodología}%Listo
 \label{sec:flujo}
 
 La primera etapa consiste en la \textit{recopilación y preprocesamiento} de instancias
-\acrshort{sdp} provenientes de colecciones de benchmarks estándar de la literatura.
+\acrshort{sdp} provenientes de colecciones de benchmarks estándar de la literatura y librerias.
 Todas las instancias se estandarizan al formato SDPA sparse, que representa el problema
 en forma primal estándar y constituye el formato de entrada común a la mayoría de los
 solvers \acrshort{sdp} modernos.
 Esta etapa establece el conjunto de instancias experimentales sobre el que se construye el resto del análisis.
 
-La segunda etapa comprende la \textit{extracción de características estructurales} a partir
-de cada instancia.
-Se diseña un conjunto de métricas computables directamente desde la representación SDPA
-sparse, que capturan propiedades geométricas y algebraicas del problema: estructura de
-bloques, densidad de los datos, conectividad del grafo de variables y propiedades de
-chordalidad de la matriz de restricciones.
-Estas características actúan como coordenadas del espacio de instancias y son el insumo
-principal del pipeline \acrshort{isa}.
-
-La tercera etapa corresponde al \textit{benchmarking de solvers}.
+La segunda etapa corresponde al \textit{benchmarking de solvers}.
 Un conjunto representativo de solvers \acrshort{sdp}
 —que cubre los principales paradigmas algorítmicos disponibles—
 se ejecuta sobre cada instancia bajo condiciones controladas de hardware y parámetros.
 El desempeño se cuantifica mediante la métrica de tiempo de cómputo con la cual se construye el perfil de
 rendimiento de cada algoritmo.
 
+La tercera etapa comprende la \textit{extracción de features} a partir
+de cada instancia.
+Se diseña un conjunto de métricas computables directamente desde la representación SDPA
+sparse, que capturan propiedades estructurales, numericas, geométricas y algebraicas del problema: 
+estructura de bloques, densidad de los datos, conectividad del grafo de variables y propiedades de
+chordalidad de la matriz de restricciones.
+Estas características actúan como coordenadas del espacio de instancias y son el insumo
+principal del pipeline \acrshort{isa}.
+
+
 La cuarta etapa aplica el \textit{framework \acrshort{isa}} propiamente dicho.
-Las instancias, representadas por sus vectores de características, se proyectan a un espacio
-bidimensional mediante el algoritmo PILOT, que combina selección de características y
+Las instancias, representadas por sus vectores de features, se proyectan a un espacio
+bidimensional mediante el algoritmo PILOT, que combina selección de features y
 proyección lineal de forma que las regiones del espacio queden asociadas a diferencias
 significativas en el rendimiento de los solvers.
 Sobre este espacio se entrena el clasificador PYTHIA, que delimita las regiones de ventaja
@@ -67,9 +68,8 @@ Las instancias generadas se validan computacionalmente
 —verificando factibilidad y estructura \acrshort{sdp}— y se reintegran al conjunto de instancias para
 enriquecer el análisis.
 
-El conjunto de las cinco etapas conforma un pipeline reproducible, implementado en Python
-con llamadas a MATLAB para los componentes \acrshort{isa}, y ejecutable localmente desde
-la aplicación Streamlit desarrollada en paralelo a este informe.
+El conjunto de las cinco etapas conforma un pipeline reproducible, ejecutable localmente desde
+la aplicación desarrollada en paralelo a este informe.
 La Figura~\ref{fig:pipeline} ilustra el flujo completo del proceso.
 
 \input{../attachments/fig_pipeline}

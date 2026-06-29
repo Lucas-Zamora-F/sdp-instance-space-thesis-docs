@@ -1,2 +1,72 @@
-\chapter{}
+\chapter{Definición de criterios de evaluación y recolección de datos}
+\label{ch:recoleccion}
 
+\section{Recolección de Instancias}
+\label{sec:recoleccion_instancias}
+
+A diferencia de áreas como la programación lineal entera, donde repositorios como MIPLIB
+concentran miles de instancias bajo un formato y criterio de calidad unificados \cite{gleixnerMIPLIB2017Datadriven2021}, 
+la programación semidefinida carece de un repositorio análogo de referencia única. Las instancias de \acrshort{sdp} 
+se encuentran dispersas entre colecciones mantenidas de forma independiente, con formatos heterogéneos, escalas 
+distintas y orígenes aplicados muy variados. Esta fragmentación obligó a extraer instancias de múltiples fuentes y 
+normalizarlas a un formato común antes de poder realizar cualquier análisis comparativo.
+
+La calidad de un análisis del espacio de instancias depende directamente de que estas cubran de forma amplia y
+representativa el espacio de problemas posibles. Una base de instancias sesgada
+hacia una sola fuente o tipo produciría un espacio de instancias con regiones artificialmente vacías que reflejarían
+la ausencia de diversidad experimental, no una característica genuina del problema \cite{smith-milesInstanceSpaceAnalysis2023}.
+
+Se seleccionaron cuatro bibliotecas de benchmarks y librerias existentes con criterios de diversidad estructural y aplicada:
+
+\textbf{SDPLIB 1.2}\cite{borchersSDPLIB12Library1999}. La biblioteca de referencia histórica del área, con
+instancias provenientes de control óptimo, diseño estructural, localización de antenas y relajaciones semidefinidas
+de problemas combinatoriales. Si bien intenta ser la librería de referencia estándar para problemas de \acrshort{sdp}
+de igual manera que MIPLIB lo es para los problemas de Programación Entera Mixta, esta solo cuenta con 92 instancias en la actualidad,
+lo cual limita su variedad.
+
+Su amplio uso en la literatura facilita la comparación con trabajos previos.
+
+\textbf{Benchmarks de Hans Mittelmann}\cite{PlatoasueduFtpSparse_sdphtml}. Colección de instancias de
+mediana y gran escala mantenida por Hans D. Mittelmann, investigador reconocido por sus estudios comparativos
+de software de optimización numérica. Sus benchmarks publican instancias recopiladas desde distintas fuentes
+académicas y aplicaciones de optimización, incluyendo los problemas \texttt{kocvara\_pennon}, provenientes
+de optimización estructural con variables de forma. Esta fuente complementa SDPLIB con instancias de mayor
+dimensión que estresan el comportamiento de los solvers en regímenes de memoria y tiempo.
+
+\textbf{DIMACS Library}\cite{DIMACSLibraryMixeda}. Colección asociada al DIMACS
+(\textit{Center for Discrete Mathematics and Theoretical Computer Science}), centro de investigación
+dedicado a matemática discreta y ciencias de la computación teórica. En particular, estas instancias
+provienen del \textit{7th DIMACS Implementation Challenge}, orientado a evaluar el avance de los solvers
+de propósito general mediante problemas de programación semidefinida-cuadrática-lineal mixta. Esta fuente
+aporta instancias con mezcla de variables continuas y semidefinidas.
+
+\textbf{Biq Mac Library}\cite{BiqMacLibrarya}. Biblioteca asociada a Biq Mac, un software especializado
+para resolver problemas binarios cuadráticos y de corte máximo mediante técnicas de optimización semidefinida
+y métodos de ramificación y acotamiento. Sus instancias corresponden a problemas de corte máximo
+(\textit{max-cut}) formulados como relajaciones \acrshort{sdp}, con estructura de grafos densos.
+Constituyen una clase estructuralmente distinta: una sola restricción por arista, bloque único de gran
+dimensión y densidad alta. Esto introduce una región del espacio de instancias que las otras tres fuentes
+no cubren.
+
+En conjunto, las cuatro fuentes abarcan orígenes aplicados heterogéneos ---control, geometría, combinatoria, diseño
+estructural--- y un rango amplio de valores para las features, lo que favorece la separabilidad de regiones
+en el espacio de instancias.
+
+Cabe notar que no todas las instancias de estas fuentes corresponden a programas semidefinidos puros en su formulación
+original: en varios casos provienen de problemas de optimización más generales ---mixtos, cuadráticos o combinatoriales---
+cuya relajación semidefinida constituye la instancia efectivamente analizada. Esta práctica es estándar en el área y no
+compromete la validez del análisis, dado que las características se extraen directamente de la formulación SDP
+resultante, independientemente del origen del problema.
+
+\section{Métrica de Rendimiento y Criterio de Buen Desempeño}
+\label{sec:metrica}
+
+El tiempo de \acrshort{cpu} fue seleccionado como métrica principal de rendimiento por ser la medida más directamente comparable entre solvers de
+distintas familias algorítmicas e implementaciones. Las métricas alternativas, como el número de iteraciones, son incomparables entre métodos de
+punto interior y métodos de Lagrangiano aumentado dado que cada iteración tiene un costo muy diferente.
+
+El etiquetado binario de rendimiento (bueno/malo) sigue el criterio de umbral relativo de \acrshort{isa}:
+un solver se considera \textit{bueno} en una instancia si su tiempo de \acrshort{cpu} no supera el $55\%$ del tiempo del solver más rápido en esa
+instancia ($\beta = 0.55$). Este umbral, recomendado por la metodología, tolera una penalización moderada respecto al óptimo sin considerar
+competitivos a solvers que resulten significativamente más lentos. Las instancias para las que ningún solver converge dentro del límite de
+$1200$ segundos se excluyen del análisis de rendimiento.

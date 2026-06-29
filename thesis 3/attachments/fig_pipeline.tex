@@ -14,27 +14,27 @@
 
 \node[etapa, fill = gray!12] (e1) {
     \textbf{Etapa 1 — Recopilación de instancias}\\[3pt]
-    \footnotesize Benchmarks estándar $\longrightarrow$ formato SDPA sparse
+    \footnotesize Benchmarks estándar y librerias $\longrightarrow$ formato SDPA sparse
 };
 
 \node[etapa, fill = blue!7, below = of e1] (e2) {
-    \textbf{Etapa 2 — Extracción de características}\\[3pt]
-    \footnotesize Estructura de bloques $\cdot$ densidad $\cdot$ conectividad $\cdot$ chordalidad
+    \textbf{Etapa 2 — Benchmarking de solvers}\\[3pt]
+    \footnotesize Tiempo de cómputo $\cdot$ iteraciones $\cdot$ calidad de solución
 };
 
 \node[etapa, fill = blue!7, below = of e2] (e3) {
-    \textbf{Etapa 3 — Benchmarking de solvers}\\[3pt]
-    \footnotesize Tiempo de cómputo $\cdot$ iteraciones $\cdot$ calidad de solución
+    \textbf{Etapa 3 — Extracción de features}\\[3pt]
+    \footnotesize Estructura de bloques $\cdot$ densidad $\cdot$ conectividad $\cdot$ chordalidad
 };
 
 \node[etapa, fill = teal!10, below = of e3] (e4) {
     \textbf{Etapa 4 — Análisis ISA}\\[3pt]
-    \footnotesize Proyección PILOT $\cdot$ clasificador PYTHIA $\longrightarrow$ espacio de instancias 2D
+    \footnotesize Generación de espacio de instancias $\longrightarrow$ regiones de ventaja comparativa de solvers
 };
 
 \node[etapa, fill = orange!12, below = of e4] (e5) {
     \textbf{Etapa 5 — Generación evolutiva}\\[3pt]
-    \footnotesize Algoritmo Genético $\longrightarrow$ instancias sintéticas hacia regiones subpobladas
+    \footnotesize Algoritmo Genético $\longrightarrow$ instancias sintéticas 
 };
 
 \draw[flecha] (e1) -- (e2);
