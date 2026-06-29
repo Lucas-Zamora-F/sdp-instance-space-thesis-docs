@@ -198,18 +198,6 @@ $C$ o en alguna matriz de restricción.
 La etapa SIFTED de MATILDA realiza una selección automática adicional sobre estas quince características antes de construir la proyección, descartando
 las que resulten redundantes o de baja relevancia para la separación de rendimiento entre solvers \cite{smith-milesInstanceSpaceAnalysis2023}.
 
-\section{Selección de MATILDA como Herramienta de ISA}
-\label{sec:seleccion_matilda}
-
-MATILDA es la implementación de referencia oficial de la metodología \acrshort{isa} propuesta por
-Smith-Miles y Muñoz. Frente a alternativas de reducción de dimensionalidad convencionales (PCA, t-SNE, UMAP),
-MATILDA construye una proyección explícitamente optimizada para maximizar la correlación entre las coordenadas del espacio y el rendimiento de los algoritmos \cite{smith-milesInstanceSpaceAnalysis2023},
-lo que produce un espacio interpretable donde la posición de una instancia predice qué solver la resolverá mejor. Esta propiedad es esencial para el
-objetivo del trabajo: no solo describir el espacio, sino orientar la generación de nuevas instancias hacia regiones con comportamiento deseado.
-
-Adicionalmente, MATILDA genera automáticamente los footprints de cada solver (etapa TRACE) y los modelos de selección de algoritmos (etapa PYTHIA),
-que son las salidas primarias de interés para el análisis comparativo de los solvers.
-
 \section{Diseño del Algoritmo Genético}
 \label{sec:disenio_ga}
 
