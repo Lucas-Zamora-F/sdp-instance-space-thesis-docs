@@ -67,7 +67,7 @@ de una misma familia.
     con soporte para conos de segundo orden y semidefinidos. Comparte familia algorítmica con SDPT3 pero difiere en la implementación del
     sistema de búsqueda de dirección.
 
-    \item \textbf{SDPA 7.3.9}\cite{}: método de punto interior primal-dual implementado en C++, que se integró como
+    \item \textbf{SDPA 7.3.9}\cite{SDPAOfficialPage}: método de punto interior primal-dual implementado en C++, que se integró como
     ejecutable externo. A diferencia de los anteriores, no depende de MATLAB, lo que elimina el overhead del intérprete para instancias
     medianas.
 
@@ -75,7 +75,7 @@ de una misma familia.
     subproblema, diseñado específicamente para instancias de gran escala donde los
     métodos de punto interior resultan prohibitivos en memoria. Representa una familia algorítmica distinta a los anteriores.
 
-    \item \textbf{DSDP 5.8}\cite{}: método de escalamiento dual, que construye iterados solo en el espacio
+    \item \textbf{DSDP 5.8}\cite{bensonDSDP5SoftwareSemidefinite}: método de escalamiento dual, que construye iterados solo en el espacio
     dual y evalúa factibilidad primal a posteriori. Su bajo requerimiento de memoria lo hace adecuado para instancias con muchas
     restricciones.
 
@@ -176,7 +176,7 @@ $3\,000$ segundos se excluyen del análisis de rendimiento.
 El experimento se apoya en un conjunto de herramientas cuya elección responde a criterios de reproducibilidad,
 disponibilidad y compatibilidad con los componentes del pipeline.
 
-\textbf{Python 3.11}. Lenguaje principal de orquestación del pipeline. Se utiliza para la extracción de características,
+\textbf{Python 3.12}. Lenguaje principal de orquestación del pipeline. Se utiliza para la extracción de características,
 el preprocesamiento de instancias, la ejecución del algoritmo genético y la interfaz con los solvers externos. Las
 bibliotecas centrales empleadas son \texttt{numpy} y \texttt{scipy} para álgebra lineal dispersa, \texttt{networkx}
 para el análisis del grafo agregado, y \texttt{subprocess} para la invocación de ejecutables externos.
