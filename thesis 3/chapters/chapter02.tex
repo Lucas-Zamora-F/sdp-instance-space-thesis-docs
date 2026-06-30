@@ -109,7 +109,7 @@ de una mejor escalabilidad en problemas grandes.
 La coexistencia de estas familias muestra que no existe un solver universalmente dominante. Un
 método puede ser competitivo en instancias pequeñas y densas, mientras otro puede destacar en
 problemas dispersos, con muchas restricciones o con bloques grandes. Esta variabilidad motiva el
-análisis del desempeño de los solvers en función de las propiedades estructurales de cada
+análisis del desempeño de los solvers en función de las características de cada
 instancia.
 
 \subsubsection{SDPT3}
@@ -182,6 +182,7 @@ del sistema de Schur y el grado de dispersión pueden afectar directamente el co
 operaciones dominantes de cada método. Por ello, la comparación empírica de solvers
 \acrshort{sdp} requiere considerar tanto el rendimiento observado como la estructura de las
 instancias sobre las que dicho rendimiento se mide.
+\cite{sunSDPNALMatlabSoftware2019}
 
 \subsection{Librerías de instancias}
 \label{subsec:librerias_instancias_sdp}
@@ -198,7 +199,7 @@ optimización combinatoria. Por su diversidad y por el uso de una representació
 SDPLIB se convirtió en una referencia habitual para comparar solvers y verificar implementaciones
 en instancias de tamaño pequeño y mediano \cite{borchersSDPLIB12Library1999}.
 
-
+\newpage
 \subsection{Benchmarks para programación semidefinida}
 \label{sec:benchmarks_sdp}
 
@@ -335,7 +336,8 @@ La metodología ha evolucionado durante más de una década hasta consolidarse e
 como el \textit{ISA toolkit} y MATILDA (\textit{Melbourne Algorithm Test Instance Library with Data
 Analytics}). Estas herramientas automatizan la construcción del espacio de instancias, la
 selección de características relevantes, la proyección bidimensional, la estimación de fronteras,
-la predicción de desempeño y el cálculo de footprints de algoritmos. Por esta razón,
+la predicción de desempeño y el cálculo de footprints de algoritmos (area del espacio de instancias 
+donde el algoritmo de sempeña bien). Por esta razón,
 \acrshort{isa} no debe entenderse solo como una técnica de visualización, sino como un marco
 completo para analizar la calidad de los benchmarks, estudiar el comportamiento relativo de
 algoritmos y orientar la generación de nuevas instancias de prueba.
@@ -379,13 +381,16 @@ corresponde a una instancia proyectada y el color identifica su familia de orige
 visualización permite inspeccionar si las instancias disponibles cubren distintas regiones del
 espacio o si se concentran en zonas estructuralmente similares.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.82\textwidth]{isa_distribution_sources.png}
     \caption{Ejemplo de distribución de instancias en un espacio bidimensional, separadas por
     fuente o familia de origen.}
     \label{fig:isa_sources}
 \end{figure}
+
+\subsection{Construcción del espacio de instancias}
+\label{subsec:isa_space_construction}
 
 La construcción del espacio de instancias se organiza en una secuencia de etapas. La primera,
 PRELIM (\textit{Preparation for Learning of Instance Meta-Data}), prepara los metadatos para el
@@ -443,7 +448,7 @@ buen desempeño, mientras que las zonas BAD muestran instancias donde dicho crit
 alcanza. La forma y extensión de estas regiones permiten interpretar visualmente la cobertura y
 robustez del algoritmo.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.82\textwidth]{isa_footprint_csdp.png}
     \caption{Ejemplo de footprint de desempeño para un algoritmo en el espacio de instancias.}

@@ -1,0 +1,53 @@
+\clearpage
+\thispagestyle{plain}
+
+\begin{center}
+    \textbf{\Large Resumen}
+\end{center}
+
+\small
+Este trabajo desarrolla un pipeline computacional para caracterizar instancias de
+\acrfull{sdp} mediante \acrfull{isa}, comparar el rendimiento de solvers
+representativos y preparar la generación dirigida de nuevas instancias sintéticas.
+La metodología integra la recopilación de instancias desde bibliotecas de benchmarks,
+su normalización al formato SDPA sparse, la ejecución automatizada de solvers, la
+extracción de features estructurales, la generación de metadata compatible con ISA y
+la construcción preliminar del espacio de instancias. Además, se implementa una
+aplicación que permite inspeccionar visualmente los artefactos generados, proyectar
+metadata de prueba mediante \texttt{exploreIS} e identificar regiones vacías del
+espacio como objetivos para una etapa posterior basada en algoritmos genéticos.
+
+Al cierre de esta etapa, el sistema permite ejecutar el flujo experimental de extremo
+a extremo y producir artefactos interpretables, incluyendo coordenadas del espacio de
+instancias, footprints preliminares de desempeño y puntos candidatos en zonas
+subrepresentadas. Los resultados obtenidos no constituyen aún una caracterización
+definitiva del rendimiento de los solvers, pero entregan evidencia inicial de que las
+instancias SDP presentan variación estructural observable y que dicha variación puede
+ser analizada mediante ISA para orientar tanto la comparación algorítmica como la
+generación evolutiva de nuevas instancias.
+
+\vspace{0.45cm}
+
+\begin{center}
+    \textbf{\Large Abstract}
+\end{center}
+
+This work develops a computational pipeline to characterize \acrfull{sdp} instances
+through \acrfull{isa}, compare the performance of representative solvers, and prepare
+the guided generation of new synthetic instances. The methodology integrates the
+collection of benchmark instances, their normalization to the SDPA sparse format,
+automated solver execution, structural feature extraction, generation of
+ISA-compatible metadata, and the preliminary construction of the instance space. In
+addition, an application is implemented to visually inspect the generated artifacts,
+project test metadata through \texttt{exploreIS}, and identify empty regions of the
+space as targets for a later stage based on genetic algorithms.
+
+At the end of this stage, the system can execute the experimental workflow from end to
+end and produce interpretable artifacts, including instance-space coordinates,
+preliminary performance footprints, and candidate points in underrepresented regions.
+The obtained results do not yet provide a definitive characterization of solver
+performance, but they offer initial evidence that SDP instances exhibit observable
+structural variation and that this variation can be analyzed through ISA to guide both
+algorithm comparison and the evolutionary generation of new instances.
+
+\normalsize

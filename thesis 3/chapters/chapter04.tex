@@ -29,7 +29,7 @@ de una misma familia.
     método de punto interior primal-dual en C++ y se integró como ejecutable externo. A diferencia de los
     anteriores, no depende de MATLAB, lo que elimina el overhead del intérprete para instancias medianas.
 
-    \item \textbf{SDPNAL+ 1.0}\cite{}: desarrollado por Defeng Sun, Kim-Chuan Toh, Yancheng Yuan y
+    \item \textbf{SDPNAL+ 1.0}\cite{sunSDPNALMatlabSoftware2019}: desarrollado por Defeng Sun, Kim-Chuan Toh, Yancheng Yuan y
     Xin-Yuan Zhao. Implementa un método de Lagrangiano aumentado con paso de Newton-CG para el
     subproblema, diseñado específicamente para instancias de gran escala donde los métodos de punto
     interior resultan prohibitivos en memoria. Representa una familia algorítmica distinta a los anteriores.
@@ -70,132 +70,135 @@ diagonal. A partir de las entradas no nulas se construye además el grafo agrega
 $V_b=\{1,\ldots,n_b\}$ y existe una arista $\{i,j\}\in E_b$, con $i\neq j$, si la posición $(i,j)$ aparece como no nula en
 $C$ o en alguna matriz de restricción.
 
-\begin{itemize}
-    \item \textbf{Tamaño y bloqueo.} Estas características describen la dimensión básica de la formulación y la estructura de bloques de la variable
-    semidefinida:
-    \begin{itemize}
-        \item \textbf{Número de restricciones (\texttt{n\_constraints}):} corresponde al valor $m$ de la cabecera SDPA:
-        \[
-            f_1 = m.
-        \]
+\newpage
+\paragraph{Tamaño y bloqueo.}
+Estas características describen la dimensión básica de la formulación y la estructura
+de bloques de la variable semidefinida.
+El número de restricciones (\path{n_constraints}) corresponde al valor $m$ de la
+cabecera SDPA:
+\[
+    f_1 = m.
+\]
+El número de bloques (\path{n_blocks}) corresponde al número de bloques diagonales
+declarados:
+\[
+    f_2 = B.
+\]
+El tamaño promedio de bloque (\path{avg_block_size}) mide el orden medio de los
+bloques, usando valor absoluto para bloques diagonales:
+\[
+    f_3 = \frac{1}{B}\sum_{b=1}^{B} n_b.
+\]
+El tamaño máximo de bloque (\path{max_block_size}) registra el bloque de mayor orden:
+\[
+    f_4 = \max_{1\leq b\leq B} n_b.
+\]
 
-        \item \textbf{Número de bloques (\texttt{n\_blocks}):} corresponde al número de bloques diagonales declarados en la variable matricial:
-        \[
-            f_2 = B.
-        \]
+\paragraph{Dispersión y solapamiento.}
+La sparsity (\path{sparsity}) mide la fracción de posiciones nulas en las matrices
+$C,A_1,\ldots,A_m$, respecto de las posiciones almacenables del triángulo superior.
+Sea
+\[
+    u(s_b)=
+    \begin{cases}
+        n_b, & s_b<0,\\
+        n_b(n_b+1)/2, & s_b>0.
+    \end{cases}
+\]
+Si $\mathrm{nnz}$ es el número de entradas no nulas almacenadas, entonces:
+\[
+    f_5 = 1-\frac{\mathrm{nnz}}{(m+1)\sum_{b=1}^{B}u(s_b)}.
+\]
 
-        \item \textbf{Tamaño promedio de bloque (\texttt{avg\_block\_size}):} mide el orden medio de los bloques, usando valor absoluto para bloques
-        diagonales:
-        \[
-            f_3 = \frac{1}{B}\sum_{b=1}^{B} n_b.
-        \]
+La densidad de solapamiento entre restricciones
+(\path{constraint_overlap_density}) construye un grafo con vértices
+$A_1,\ldots,A_m$, donde dos restricciones son adyacentes si comparten al menos una
+posición no nula.
+Si $E_{\mathrm{ov}}$ es el conjunto de aristas de ese grafo:
+\[
+    f_6 = \frac{|E_{\mathrm{ov}}|}{m(m-1)/2},
+\]
+con valor $0$ cuando $m<2$.
 
-        \item \textbf{Tamaño máximo de bloque (\texttt{max\_block\_size}):} registra el bloque de mayor orden:
-        \[
-            f_4 = \max_{1\leq b\leq B} n_b.
-        \]
-    \end{itemize}
+\paragraph{Grafo agregado.}
+Estas características resumen la conectividad inducida por las posiciones no nulas
+dentro de cada bloque.
+La densidad del grafo agregado (\path{aggregate_graph_density}) mide la fracción de
+aristas presentes en los grafos agregados por bloque:
+\[
+    f_7 =
+    \frac{\sum_{b=1}^{B}|E_b|}
+         {\sum_{b=1}^{B} n_b(n_b-1)/2}.
+\]
+El número de componentes del grafo agregado
+(\path{aggregate_graph_n_components}) suma las componentes conexas de todos los grafos
+agregados, incluyendo vértices aislados:
+\[
+    f_8 = \sum_{b=1}^{B}\mathrm{cc}(G_b).
+\]
+La fracción de la componente más grande
+(\path{aggregate_graph_largest_component_frac}) calcula, para cada bloque, el tamaño
+de su mayor componente conexa y reporta la fracción máxima:
+\[
+    f_9 =
+    \max_{1\leq b\leq B}
+    \frac{\max_{S\in \mathrm{CC}(G_b)} |S|}{n_b}.
+\]
 
-    \item \textbf{Dispersión y solapamiento.} Estas características cuantifican cuántas posiciones nulas existen y cuánto se superponen las matrices
-    de restricción:
-    \begin{itemize}
-        \item \textbf{Sparsity (\texttt{sparsity}):} es la fracción de posiciones nulas en las matrices $C,A_1,\ldots,A_m$, respecto de las posiciones
-        almacenables del triángulo superior. Si
-        \[
-            u(s_b)=
-            \begin{cases}
-                n_b, & s_b<0,\\
-                n_b(n_b+1)/2, & s_b>0,
-            \end{cases}
-        \]
-        y $\mathrm{nnz}$ es el número de entradas no nulas almacenadas, entonces
-        \[
-            f_5 = 1-\frac{\mathrm{nnz}}{(m+1)\sum_{b=1}^{B}u(s_b)}.
-        \]
+\paragraph{Estructura chordal y ancho de árbol.}
+Estas características se calculan aplicando una heurística determinista
+\textit{min-fill} a cada grafo agregado.
+El ancho de árbol aproximado (\path{approx_treewidth}) toma el mayor grado de
+eliminación observado.
+Si $\pi_b$ es el orden de eliminación y $N_{\pi_b}^{+}(v)$ son los vecinos activos de
+$v$ al eliminarlo:
+\[
+    f_{10} = \max_b \max_{v\in V_b}|N_{\pi_b}^{+}(v)|.
+\]
+La razón de llenado chordal (\path{chordal_fill_ratio}) compara el número de aristas
+del grafo extendido con el número de aristas originales:
+\[
+    f_{11} =
+    \frac{\sum_b |E_b|+\sum_b |F_b|}
+         {\sum_b |E_b|},
+\]
+y se define como $1$ cuando no hay aristas originales.
+El tamaño máximo de clique chordal (\path{max_chordal_clique_size}) registra el mayor
+clique inducido durante la eliminación:
+\[
+    f_{12} =
+    \max_b \max_{v\in V_b}\left(|N_{\pi_b}^{+}(v)|+1\right).
+\]
+Finalmente, la entropía de tamaños de clique (\path{clique_size_entropy}) mide la
+heterogeneidad de los cliques de eliminación.
+Si $\mathcal{K}$ es el multiconjunto de tamaños de clique y $p_k$ la frecuencia
+relativa del tamaño $k$, entonces:
+\[
+    f_{13} = -\sum_k p_k\log_2 p_k.
+\]
 
-        \item \textbf{Densidad de solapamiento entre restricciones (\texttt{constraint\_overlap\_density}):} construye un grafo con vértices
-        $A_1,\ldots,A_m$, donde dos restricciones son adyacentes si comparten al menos una posición no nula. Si $E_{\mathrm{ov}}$ es el conjunto de
-        aristas de ese grafo,
-        \[
-            f_6 = \frac{|E_{\mathrm{ov}}|}{m(m-1)/2},
-        \]
-        con valor $0$ cuando $m<2$.
-    \end{itemize}
+\paragraph{Matriz de Gram de Schur.}
+Estas características describen la estructura algebraica del sistema de Schur
+inducido por las matrices de restricción.
+La densidad de la matriz de Gram de Schur (\path{schur_gram_density}) define primero
+la matriz $G\in\mathbb{R}^{m\times m}$ mediante el producto de Frobenius:
+\[
+    G_{ij}=\langle A_i,A_j\rangle_F.
+\]
+La característica corresponde a la fracción de entradas no nulas de esta matriz:
+\[
+    f_{14} = \frac{\mathrm{nnz}(G)}{m^2}.
+\]
+El condicionamiento logarítmico de Gram de Schur
+(\path{schur_gram_condition_log}) calcula el condicionamiento espectral de una versión
+regularizada de $G$:
+\[
+    f_{15} = \log_{10}\kappa_2(G+\varepsilon I),
+    \qquad
+    \varepsilon=10^{-12}\max(1,\lambda_{\max}(G)).
+\]
 
-    \item \textbf{Grafo agregado.} Estas características resumen la conectividad inducida por las posiciones no nulas dentro de cada bloque:
-    \begin{itemize}
-        \item \textbf{Densidad del grafo agregado (\texttt{aggregate\_graph\_density}):} mide la fracción de aristas presentes en los grafos agregados
-        por bloque:
-        \[
-            f_7 = \frac{\sum_{b=1}^{B}|E_b|}{\sum_{b=1}^{B} n_b(n_b-1)/2}.
-        \]
-
-        \item \textbf{Número de componentes del grafo agregado (\texttt{aggregate\_graph\_n\_components}):} suma las componentes conexas de todos los
-        grafos agregados, incluyendo vértices aislados:
-        \[
-            f_8 = \sum_{b=1}^{B}\mathrm{cc}(G_b).
-        \]
-
-        \item \textbf{Fracción de la componente más grande (\texttt{aggregate\_graph\_largest\_component\_frac}):} para cada bloque calcula el tamaño
-        de su mayor componente conexa y reporta la fracción máxima:
-        \[
-            f_9 = \max_{1\leq b\leq B}\frac{\max_{S\in \mathrm{CC}(G_b)} |S|}{n_b}.
-        \]
-    \end{itemize}
-
-    \item \textbf{Estructura chordal y ancho de árbol.} Estas características se calculan aplicando una heurística determinista \textit{min-fill} a
-    cada grafo agregado:
-    \begin{itemize}
-        \item \textbf{Ancho de árbol aproximado (\texttt{approx\_treewidth}):} toma el mayor grado de eliminación observado. Si $\pi_b$ es el orden de
-        eliminación y $N_{\pi_b}^{+}(v)$ son los vecinos activos de $v$ al eliminarlo,
-        \[
-            f_{10} = \max_{b}\max_{v\in V_b}|N_{\pi_b}^{+}(v)|.
-        \]
-
-        \item \textbf{Razón de llenado chordal (\texttt{chordal\_fill\_ratio}):} sea $F_b$ el conjunto de aristas agregadas para completar
-        chordalmente cada $G_b$. La característica es
-        \[
-            f_{11} = \frac{\sum_b |E_b|+\sum_b |F_b|}{\sum_b |E_b|},
-        \]
-        y se define como $1$ cuando no hay aristas originales.
-
-        \item \textbf{Tamaño máximo de clique chordal (\texttt{max\_chordal\_clique\_size}):} registra el mayor clique inducido durante la eliminación
-        \textit{min-fill}:
-        \[
-            f_{12} = \max_b\max_{v\in V_b}\left(|N_{\pi_b}^{+}(v)|+1\right).
-        \]
-
-        \item \textbf{Entropía de tamaños de clique (\texttt{clique\_size\_entropy}):} sea $\mathcal{K}$ el multiconjunto de tamaños de clique
-        registrados durante la eliminación \textit{min-fill}, y sea $p_k$ la frecuencia relativa del tamaño $k$. Entonces
-        \[
-            f_{13} = -\sum_k p_k\log_2 p_k.
-        \]
-    \end{itemize}
-
-    \item \textbf{Matriz de Gram de Schur.} Estas características describen la estructura algebraica del sistema de Schur inducido por las matrices de
-    restricción:
-    \begin{itemize}
-        \item \textbf{Densidad de la matriz de Gram de Schur (\texttt{schur\_gram\_density}):} define la matriz
-        $G\in\mathbb{R}^{m\times m}$ mediante el producto de Frobenius entre restricciones,
-        \[
-            G_{ij}=\langle A_i,A_j\rangle_F.
-        \]
-        La característica es la fracción de entradas no nulas de esta matriz:
-        \[
-            f_{14} = \frac{\mathrm{nnz}(G)}{m^2}.
-        \]
-
-        \item \textbf{Condicionamiento logarítmico de Gram de Schur (\texttt{schur\_gram\_condition\_log}):} calcula el condicionamiento espectral de
-        una versión regularizada de $G$:
-        \[
-            f_{15} = \log_{10}\kappa_2(G+\varepsilon I),
-            \qquad
-            \varepsilon=10^{-12}\max(1,\lambda_{\max}(G)).
-        \]
-    \end{itemize}
-\end{itemize}
-
-La etapa SIFTED de MATILDA realiza una selección automática adicional sobre estas quince características antes de construir la proyección, descartando
+La etapa SIFTED de ISA realiza una selección automática adicional sobre estas quince características antes de construir la proyección, descartando
 las que resulten redundantes o de baja relevancia para la separación de rendimiento entre solvers \cite{smith-milesInstanceSpaceAnalysis2023}.
 
 \section{Diseño del Algoritmo Genético}
@@ -205,9 +208,7 @@ La elección de un algoritmo genético como mecanismo de generación de instanci
 Bowly \cite{smith-milesGeneratingNewTest2015}, que demuestra que la evolución en el espacio de instancias es una estrategia efectiva para
 producir instancias con propiedades controladas sin requerir información de gradiente respecto al espacio proyectado. En dicho trabajo, los
 autores proponen seleccionar puntos objetivo en regiones poco pobladas del espacio de instancias y evolucionar nuevas instancias cuya posición
-proyectada se acerque a esos puntos. Esta idea es especialmente adecuada para este estudio, dado que la proyección PILOT no es diferenciable con
-respecto a las entradas discretas de una instancia \acrshort{sdp}, como los tamaños de bloque, los índices de las entradas no nulas y la cantidad de
-restricciones.
+proyectada se acerque a esos puntos.
 
 El motor genético implementado adapta este principio al formato SDPA sparse. Cada individuo de la población corresponde a una instancia candidata
 \texttt{.dat-s}, definida por su número de restricciones, su lista de bloques, el vector $b$ y el conjunto disperso de entradas
@@ -218,7 +219,7 @@ de bloques. Después de cada modificación, la instancia se normaliza nuevamente
 bloque y consistencia entre cabecera y datos.
 
 El ciclo evolutivo sigue el esquema general propuesto por Smith-Miles y Bowly \cite{smith-milesGeneratingNewTest2015}: para cada generación se
-decodifican las instancias candidatas, se extraen sus quince características estructurales, se proyectan al espacio de instancias usando el modelo
+decodifican las instancias candidatas, se extraen sus características , se proyectan al espacio de instancias usando el modelo
 \acrshort{isa} ya construido, y se asigna a cada individuo una aptitud. Luego, los individuos con mejor aptitud tienen mayor probabilidad de
 contribuir a la siguiente generación mediante selección, cruce y mutación. En esta adaptación, el cruce combina componentes de dos instancias
 padre, mientras que la mutación introduce cambios locales o estructurales. La presión selectiva permite conservar instancias que avanzan hacia la
@@ -281,7 +282,7 @@ constituyen la contribución de software de este trabajo.
 
 \textbf{Sistema operativo}. El experimento se ejecutó sobre Windows 11 Pro (64 bits, x64), 
 con procesador Intel Core i7-10700 a 2.90\,GHz, 32\,GB de RAM y tarjeta gráfica NVIDIA
-GeForce RTX 3080 (10\,GB). Las restricciones de hardware determinan el límite de tiempo de $3\,000$ segundos
+GeForce RTX 3080 (10\,GB). Las restricciones de hardware determinan el límite de tiempo de $1\,200$ segundos
 
 \textbf{Control de versiones}. El código fuente, los scripts de extracción de características, el algoritmo genético
 y la documentación del experimento se gestionan con Git y se alojan en GitHub, lo que garantiza la trazabilidad de

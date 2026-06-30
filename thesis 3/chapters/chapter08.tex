@@ -26,8 +26,8 @@ incorporarlas al resto del pipeline.
 En la corrida preliminar usada para validar el flujo completo se trabajó con un
 subconjunto de instancias de SDPLIB~1.2, suficiente para verificar la integración de
 las etapas posteriores.
-La metadata generada para esta prueba contiene 84 instancias, cada una con su fuente,
-un conjunto de features estructurales y tiempos de ejecución para los solvers
+La metadata generada para esta prueba contiene 92 instancias, cada una con su fuente,
+un conjunto de features y tiempos de ejecución para los solvers
 considerados.
 Este resultado confirma que el formato SDPA sparse puede actuar como representación
 canónica para conectar recopilación, extracción de features, benchmarking e
@@ -73,15 +73,17 @@ Su generación confirma que los resultados de benchmarking son legibles por el p
 \section{Resultados de extracción de features}
 \label{sec:resultados_features}
 
-La extracción de features produjo valores estructurales directamente desde los
+La extracción de features produjo valores directamente desde los
 archivos \texttt{.dat-s}.
 En la corrida preliminar integrada con \texttt{buildIS}, la metadata utilizada incluyó
 cinco features estructurales:
-\texttt{feature\_aggregate\_graph\_n\_components},
-\texttt{feature\_avg\_block\_size},
-\texttt{feature\_n\_blocks},
-\texttt{feature\_n\_constraints} y
-\texttt{feature\_schur\_gram\_density}.
+\begin{itemize}
+    \item \path{feature_aggregate_graph_n_components}
+    \item \path{feature_avg_block_size}
+    \item \path{feature_n_blocks}
+    \item \path{feature_n_constraints}
+    \item \path{feature_schur_gram_density}
+\end{itemize}
 
 Aunque el diseño completo contempla un conjunto mayor de features, esta corrida
 preliminar permitió validar el flujo de normalización, procesamiento y proyección.
@@ -119,12 +121,41 @@ metadata fueron proyectadas correctamente.
 Las coordenadas $(z_1,z_2)$ constituyen la representación geométrica sobre la cual se
 analizan regiones de desempeño y zonas vacías.
 
+La Figura~\ref{fig:distribution_feature_n_constraints} muestra una visualización de
+la distribución preliminar de instancias en el espacio construido, coloreada según la
+feature asociada al número de restricciones.
+Esta vista permite comprobar que el espacio proyectado conserva variación estructural
+observable entre las instancias, en lugar de agruparlas en una única zona homogénea.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.86\textwidth]{distribution_feature_n_constraints_plot}
+    \caption{Distribución preliminar de instancias en el espacio construido por
+    \texttt{buildIS}, coloreada según la feature de número de restricciones.}
+    \label{fig:distribution_feature_n_constraints}
+\end{figure}
+
 La generación de footprints para los solvers confirma que el pipeline logró conectar
 features y rendimiento dentro del framework \acrshort{isa}.
 Estos footprints no deben interpretarse todavía como conclusiones finales sobre el
 dominio completo de \acrshort{sdp}, ya que corresponden a una corrida preliminar; sin
 embargo, sí muestran que el sistema es capaz de delimitar regiones asociadas al buen
 desempeño relativo de cada algoritmo.
+
+La Figura~\ref{fig:footprint_csdp} presenta el footprint preliminar asociado a
+\texttt{CSDP}.
+La región marcada permite inspeccionar visualmente en qué zonas del espacio este solver
+aparece como competitivo bajo los criterios usados por \acrshort{isa}, entregando una
+primera evidencia de que la metadata de rendimiento puede traducirse en regiones
+interpretables dentro del espacio de instancias.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.86\textwidth]{footprint_csdp_plot}
+    \caption{Footprint preliminar de \texttt{CSDP} generado a partir de la corrida
+    integrada con \texttt{buildIS}.}
+    \label{fig:footprint_csdp}
+\end{figure}
 
 \section{Exploración de nuevas instancias y comparación visual}
 \label{sec:resultados_explore_is}
@@ -192,9 +223,7 @@ aislada, mientras que la aplicación permite observar directamente la geometría
 espacio, los puntos asociados a instancias y los candidatos para generación sintética.
 Esto reduce la distancia entre el resultado numérico y la interpretación experimental.
 
-Tercero, la etapa genética queda metodológicamente justificada por los resultados de
-espacios vacíos.
-La existencia de regiones subpobladas y de puntos candidatos explícitos confirma que
+Tercero, la existencia de regiones subpobladas y de puntos candidatos explícitos confirma que
 el espacio de instancias no está uniformemente cubierto.
 Por lo tanto, usar un algoritmo genético para poblar dichas regiones es una extensión
 natural del análisis, consistente con la hipótesis planteada en el

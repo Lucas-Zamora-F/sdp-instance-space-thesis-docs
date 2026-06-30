@@ -89,7 +89,51 @@ instancias.
     con características deseables para otros fines.
 \end{enumerate}
 
-\section{Estructura del informe}%Por hacer
+\section{Estructura del informe}
 
-% Descripción breve de la organización del documento.
+El informe se organiza en ocho capítulos.
+El Capítulo~\ref{ch:intro} introduce la motivación del trabajo, plantea la hipótesis
+de investigación y define los objetivos generales y específicos que guían el estudio.
 
+El Capítulo~\ref{ch:litRev} presenta la revisión bibliográfica necesaria para
+contextualizar el problema.
+En él se describen los fundamentos de la programación semidefinida, las principales
+familias de solvers disponibles, las bibliotecas de instancias usadas en la literatura,
+los formatos de representación de problemas \acrshort{sdp} y el marco metodológico de
+\acrshort{isa}.
+
+El Capítulo~\ref{ch:metodo} describe la metodología general de la investigación.
+Este capítulo organiza el trabajo como un pipeline empírico-computacional que integra
+recopilación de instancias, benchmarking de solvers, extracción de features, construcción
+del espacio de instancias y generación evolutiva de nuevas instancias.
+
+El Capítulo~\ref{ch:disenio} detalla las decisiones de diseño experimental.
+Allí se justifica la selección de solvers, el uso del formato SDPA sparse como
+representación común, el conjunto de features estructurales consideradas, el diseño del
+algoritmo genético y las herramientas computacionales utilizadas para implementar el
+experimento.
+
+El Capítulo~\ref{ch:recoleccion} define los criterios de evaluación y la estrategia de
+recolección de datos.
+En particular, se describen las fuentes de instancias seleccionadas, la motivación para
+combinar bibliotecas heterogéneas y la métrica de rendimiento usada para comparar
+solvers dentro del framework \acrshort{isa}.
+
+El Capítulo~\ref{ch:protocolo} documenta el protocolo experimental, la implementación
+desarrollada y los avances alcanzados.
+Este capítulo describe cómo se materializa el pipeline en la aplicación: preparación de
+instancias, instalación e integración de solvers, cálculo de features, generación de
+metadata, ejecución de \texttt{buildIS} y \texttt{exploreIS}, exploración visual de
+resultados e identificación de regiones vacías para la etapa genética.
+
+El Capítulo~\ref{ch:resultados} presenta los resultados parciales obtenidos al cierre
+de esta etapa.
+Se reportan evidencias de funcionamiento del pipeline, resultados preliminares de
+benchmarking, construcción inicial del espacio de instancias, footprints de desempeño,
+exploración de nuevas instancias y detección de puntos candidatos en zonas
+subrepresentadas.
+
+Finalmente, el Capítulo~\ref{ch:conclu} sintetiza las conclusiones del trabajo.
+En él se revisa el cumplimiento de los objetivos, se resumen las contribuciones
+principales, se discuten las limitaciones actuales y se proponen líneas de trabajo
+futuro para completar el análisis experimental y la generación evolutiva de instancias.
