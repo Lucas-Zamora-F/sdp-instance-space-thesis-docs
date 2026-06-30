@@ -1,0 +1,33 @@
+\begin{algorithm}[H]
+\caption{Construcción del grafo agregado y extracción de sus features}
+\label{alg:features_aggregate_graph}
+\begin{algorithmic}[1]
+\Require Archivo SDPA sparse $f$ con bloques $[s_1,\dots,s_B]$
+\Ensure  Features: $aggregate\_graph\_density$,
+         $aggregate\_graph\_n\_components$,
+         $aggregate\_graph\_largest\_component\_frac$
+
+\Statex \textbf{Construcción del grafo agregado $G$:}
+\State $V \gets \emptyset$, $E \gets \emptyset$
+\For{cada bloque $k \in \{1,\dots,B\}$}
+    \State Agregar nodos $\{(k,1), (k,2), \dots, (k,|s_k|)\}$ a $V$
+    \For{cada entrada $(\text{matno}, k, i, j, v)$ con $i \neq j$}
+        \State $E \gets E \cup \{(k,i),(k,j)\}$
+        \Comment{arista sin dirección, posición fuera de diagonal}
+    \EndFor
+\EndFor
+
+\Statex \textbf{Extracción de features:}
+\State $n \gets |V|$, \quad $e \gets |E|$
+\State \textbf{aggregate\_graph\_density}
+       $\gets e \;/\; \sum_{k=1}^{B} \binom{|s_k|}{2}$
+
+\State Calcular componentes conexas de $G$ con BFS/DFS
+\State \textbf{aggregate\_graph\_n\_components}
+       $\gets$ número de componentes
+
+\State $c_{\max} \gets$ tamaño de la componente más grande
+\State \textbf{aggregate\_graph\_largest\_component\_frac}
+       $\gets c_{\max} \;/\; n$
+\end{algorithmic}
+\end{algorithm}

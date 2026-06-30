@@ -1,0 +1,26 @@
+\begin{algorithm}[H]
+\caption{Extracción de features de la matriz de Gram de Schur}
+\label{alg:features_schur_gram}
+\begin{algorithmic}[1]
+\Require Archivo SDPA sparse $f$ con restricciones $A_1, \dots, A_m$
+\Ensure  Features: $schur\_gram\_density$, $schur\_gram\_condition\_log$
+
+\Statex \textbf{Construcción de la matriz de Gram $G \in \mathbb{R}^{m \times m}$:}
+\For{cada par $(i,j)$ con $1 \leq i \leq j \leq m$}
+    \State $G_{ij} \gets \langle A_i, A_j \rangle_F
+           = \sum_{k,r,c} (A_i)_{k,r,c} \cdot (A_j)_{k,r,c}$
+    \Statex \hspace{2.5em} (entradas fuera de diagonal pesan el doble por simetría)
+    \State $G_{ji} \gets G_{ij}$
+\EndFor
+
+\Statex \textbf{Extracción de features:}
+\State $\textit{nnz}(G) \gets |\{(i,j) : G_{ij} \neq 0\}|$
+\State \textbf{schur\_gram\_density}
+       $\gets \textit{nnz}(G) \;/\; m^2$
+
+\State Calcular valores singulares $\sigma_{\max}, \sigma_{\min}$ de $G$
+\State \textbf{schur\_gram\_condition\_log}
+       $\gets \log_{10}\!\left(\sigma_{\max} / \max(\sigma_{\min}, \varepsilon)\right)$
+       \Comment{$\varepsilon$ evita división por cero}
+\end{algorithmic}
+\end{algorithm}

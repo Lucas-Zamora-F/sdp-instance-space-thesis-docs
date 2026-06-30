@@ -1,2 +1,223 @@
-\chapter{Resultados y Análisis}
+\chapter{Resultados parciales y análisis}
 \label{ch:resultados}
+
+Este capítulo presenta los resultados parciales obtenidos al cierre de Tesis~3.
+El énfasis no está todavía en extraer conclusiones definitivas sobre la superioridad
+de un solver particular, sino en evaluar si el pipeline construido es capaz de
+producir los artefactos necesarios para realizar dicho análisis: instancias
+normalizadas, features, resultados de benchmarking, metadata consolidada, espacio de
+instancias, proyección de instancias de prueba y puntos candidatos para generación
+sintética.
+
+Los resultados se interpretan como una validación preliminar de extremo a extremo.
+En particular, permiten verificar que las etapas descritas en el
+Capítulo~\ref{ch:protocolo} funcionan de forma integrada y que los datos generados
+son compatibles con el framework \acrshort{isa}.
+
+\section{Resultado de la preparación de instancias}
+\label{sec:resultados_instancias}
+
+La primera evidencia obtenida es la consolidación de un conjunto de instancias
+\acrshort{sdp} en formato SDPA sparse.
+Las instancias recopiladas desde las fuentes definidas en el diseño experimental
+fueron transformadas a una representación común, validando su estructura antes de
+incorporarlas al resto del pipeline.
+
+En la corrida preliminar usada para validar el flujo completo se trabajó con un
+subconjunto de instancias de SDPLIB~1.2, suficiente para verificar la integración de
+las etapas posteriores.
+La metadata generada para esta prueba contiene 84 instancias, cada una con su fuente,
+un conjunto de features estructurales y tiempos de ejecución para los solvers
+considerados.
+Este resultado confirma que el formato SDPA sparse puede actuar como representación
+canónica para conectar recopilación, extracción de features, benchmarking e
+\acrshort{isa}.
+
+Un aspecto relevante observado durante esta etapa es que incluso dentro de una misma
+fuente, como SDPLIB, existen diferencias estructurales marcadas entre familias de
+instancias.
+Las instancias de control, diseño estructural, grafos y problemas de factibilidad
+generan combinaciones distintas de tamaño de bloque, número de restricciones,
+conectividad y densidad.
+Esta variabilidad es necesaria para que el espacio de instancias no colapse en una
+única región homogénea.
+
+\section{Resultados preliminares de benchmarking}
+\label{sec:resultados_benchmark}
+
+La ejecución preliminar de benchmarking permitió validar que los runners de solvers
+producen salidas comparables.
+La metadata contiene columnas de rendimiento para \texttt{CSDP}, \texttt{DSDP},
+\texttt{SDPA}, \texttt{SDPT3} y \texttt{SeDuMi}, expresadas como tiempos de
+\acrshort{cpu}.
+Esto permite construir una matriz de rendimiento donde cada fila corresponde a una
+instancia y cada columna a un algoritmo.
+
+El resultado más importante de esta etapa es la existencia de variación entre los
+tiempos reportados por los solvers.
+Si todos los algoritmos presentaran tiempos equivalentes en todas las instancias, el
+espacio de instancias tendría poca capacidad para distinguir regiones de ventaja
+comparativa.
+En cambio, la metadata preliminar muestra diferencias entre algoritmos según la
+instancia, lo que permite aplicar el criterio de buen desempeño definido en la
+Sección~\ref{sec:metrica}.
+
+A partir de estos tiempos, \acrshort{isa} genera artefactos derivados como
+\texttt{algorithm\_process.csv}, \texttt{good\_algos.csv} y \texttt{portfolio.csv}.
+Estos archivos resumen, respectivamente, el rendimiento procesado, el número de
+algoritmos considerados buenos por instancia y el algoritmo con mejor desempeño
+relativo.
+Su generación confirma que los resultados de benchmarking son legibles por el pipeline
+\acrshort{isa} y pueden ser usados para construir footprints de desempeño.
+
+\section{Resultados de extracción de features}
+\label{sec:resultados_features}
+
+La extracción de features produjo valores estructurales directamente desde los
+archivos \texttt{.dat-s}.
+En la corrida preliminar integrada con \texttt{buildIS}, la metadata utilizada incluyó
+cinco features estructurales:
+\texttt{feature\_aggregate\_graph\_n\_components},
+\texttt{feature\_avg\_block\_size},
+\texttt{feature\_n\_blocks},
+\texttt{feature\_n\_constraints} y
+\texttt{feature\_schur\_gram\_density}.
+
+Aunque el diseño completo contempla un conjunto mayor de features, esta corrida
+preliminar permitió validar el flujo de normalización, procesamiento y proyección.
+Los valores procesados por \acrshort{isa} quedaron registrados en
+\texttt{feature\_process.csv}, donde cada feature se encuentra normalizada para su uso
+en el modelo del espacio.
+La existencia de este archivo es relevante porque confirma que las features extraídas
+desde Python son compatibles con las etapas internas de preprocesamiento de
+\acrshort{isa}.
+
+Desde el punto de vista interpretativo, las features utilizadas capturan dimensiones
+complementarias del problema.
+El número de restricciones y el tamaño promedio de bloque describen la escala de la
+formulación; el número de bloques resume su partición semidefinida; el número de
+componentes del grafo agregado entrega información sobre conectividad estructural; y
+la densidad de la matriz de Gram de Schur aproxima el grado de interacción entre
+restricciones.
+Estas dimensiones son suficientes para una primera proyección exploratoria del
+espacio.
+
+\section{Construcción preliminar del espacio de instancias}
+\label{sec:resultados_build_is}
+
+La ejecución de \texttt{buildIS} produjo el modelo del espacio de instancias y los
+artefactos asociados bajo \path{app/data/isa/build_is}.
+Entre los archivos generados se encuentran \texttt{model.mat},
+\texttt{coordinates.csv}, \texttt{bounds.csv}, \texttt{projection\_matrix.csv},
+tablas de rendimiento procesado, archivos de portfolio y figuras de footprints.
+
+El archivo \texttt{coordinates.csv} contiene una coordenada bidimensional para cada
+instancia de la metadata preliminar.
+En esta corrida, el número de filas de coordenadas coincide con el número de
+instancias procesadas, lo que confirma que todas las instancias incluidas en la
+metadata fueron proyectadas correctamente.
+Las coordenadas $(z_1,z_2)$ constituyen la representación geométrica sobre la cual se
+analizan regiones de desempeño y zonas vacías.
+
+La generación de footprints para los solvers confirma que el pipeline logró conectar
+features y rendimiento dentro del framework \acrshort{isa}.
+Estos footprints no deben interpretarse todavía como conclusiones finales sobre el
+dominio completo de \acrshort{sdp}, ya que corresponden a una corrida preliminar; sin
+embargo, sí muestran que el sistema es capaz de delimitar regiones asociadas al buen
+desempeño relativo de cada algoritmo.
+
+\section{Exploración de nuevas instancias y comparación visual}
+\label{sec:resultados_explore_is}
+
+La ejecución de \texttt{exploreIS} permitió validar la segunda parte del flujo
+\acrshort{isa}: proyectar metadata de prueba sobre un modelo previamente construido.
+Los resultados se almacenaron en \path{app/data/isa/explore_is}, incluyendo una copia
+del modelo, la metadata de prueba, coordenadas proyectadas y artefactos gráficos.
+
+La aplicación desarrollada permite comparar el espacio original generado por
+\texttt{buildIS} con el espacio resultante al incorporar metadata de prueba.
+Esta comparación es importante porque permite distinguir entre dos operaciones
+conceptualmente distintas: construir el modelo base y evaluar cómo nuevas instancias
+se ubican respecto de ese modelo.
+En términos experimentales, esto habilita una forma controlada de analizar instancias
+externas o sintéticas sin alterar inmediatamente la referencia original.
+
+La vista interactiva mostrada en la Figura~\ref{fig:app_result_plot} confirma que los
+resultados de \acrshort{isa} pueden ser inspeccionados desde la aplicación.
+La posibilidad de hacer zoom, desplazar la vista e identificar qué instancia
+corresponde a cada punto facilita el análisis exploratorio, especialmente cuando se
+buscan agrupamientos, instancias atípicas o regiones donde cambia el comportamiento
+relativo de los solvers.
+
+\section{Identificación de espacios vacíos}
+\label{sec:resultados_espacios_vacios}
+
+Un resultado parcial relevante para la etapa de algoritmos genéticos es la
+identificación automática de puntos candidatos en regiones vacías del espacio de
+instancias.
+La aplicación generó un archivo \texttt{candidate\_points.json} con 10 puntos
+candidatos, cada uno descrito por sus coordenadas $(z_1,z_2)$ y su distancia mínima a
+las instancias existentes.
+
+Estos puntos cumplen dos funciones.
+Primero, entregan una caracterización geométrica de zonas subpobladas dentro del
+espacio construido.
+Segundo, sirven como objetivos concretos para el algoritmo genético, que puede intentar
+evolucionar instancias existentes hacia esas coordenadas.
+La Figura~\ref{fig:app_empty_space} muestra la interfaz utilizada para visualizar
+estos puntos candidatos.
+
+Este resultado conecta directamente el análisis descriptivo con la generación activa
+de nuevas instancias.
+En lugar de elegir regiones objetivo de forma manual, la aplicación identifica zonas
+de baja densidad a partir de la propia geometría del espacio.
+Esto permite que la generación evolutiva se oriente a cubrir vacíos experimentales
+observados y no solo a producir variaciones arbitrarias de instancias existentes.
+
+\section{Discusión de los resultados parciales}
+\label{sec:resultados_discusion}
+
+Los resultados obtenidos permiten extraer tres conclusiones preliminares.
+Primero, el pipeline es técnicamente viable: las instancias pueden ser preparadas,
+caracterizadas, resueltas por solvers, consolidadas en metadata y procesadas por
+\acrshort{isa}.
+La generación de archivos como \texttt{model.mat}, \texttt{coordinates.csv},
+\texttt{portfolio.csv} y \texttt{candidate\_points.json} demuestra que el flujo
+produce artefactos interpretables en cada etapa.
+
+Segundo, la integración entre análisis automático e inspección visual es útil para el
+dominio.
+Los archivos generados por \acrshort{isa} pueden ser difíciles de interpretar de forma
+aislada, mientras que la aplicación permite observar directamente la geometría del
+espacio, los puntos asociados a instancias y los candidatos para generación sintética.
+Esto reduce la distancia entre el resultado numérico y la interpretación experimental.
+
+Tercero, la etapa genética queda metodológicamente justificada por los resultados de
+espacios vacíos.
+La existencia de regiones subpobladas y de puntos candidatos explícitos confirma que
+el espacio de instancias no está uniformemente cubierto.
+Por lo tanto, usar un algoritmo genético para poblar dichas regiones es una extensión
+natural del análisis, consistente con la hipótesis planteada en el
+Capítulo~\ref{ch:intro}.
+
+\section{Limitaciones de la etapa actual}
+\label{sec:resultados_limitaciones}
+
+Los resultados descritos son parciales y deben interpretarse con cautela.
+La corrida integrada utilizada para validar el flujo se basa en un subconjunto de
+features y en una metadata preliminar.
+Por ello, las footprints observadas todavía no constituyen una caracterización final
+del rendimiento de los solvers en todo el dominio \acrshort{sdp}.
+
+Además, la generación genética se encuentra en una etapa de integración con el
+pipeline actual.
+Aunque existe una implementación funcional previa y la aplicación ya identifica puntos
+objetivo en regiones vacías, aún falta validar experimentalmente la calidad de las
+instancias sintéticas generadas, ejecutar los solvers sobre ellas y medir su impacto
+en la cobertura del espacio.
+
+Estas limitaciones no invalidan los avances alcanzados; más bien delimitan el alcance
+de Tesis~3.
+El resultado principal de esta etapa es contar con una infraestructura funcional y
+verificable sobre la cual ejecutar el análisis completo y la generación evolutiva en
+la siguiente fase del trabajo.

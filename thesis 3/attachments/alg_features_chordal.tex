@@ -1,0 +1,35 @@
+\begin{algorithm}[H]
+\caption{Extracción de features de chordalidad sobre el grafo agregado}
+\label{alg:features_chordal}
+\begin{algorithmic}[1]
+\Require Grafo agregado $G = (V, E)$ (véase Algoritmo~\ref{alg:features_aggregate_graph})
+\Ensure  Features: $approx\_treewidth$, $chordal\_fill\_ratio$,
+         $max\_chordal\_clique\_size$, $clique\_size\_entropy$
+
+\Statex \textbf{Eliminación con heurística min-fill:}
+\State $G' \gets G$, \quad $\text{fill} \gets 0$, \quad $w \gets 0$,
+       \quad $\text{cliques} \gets []$
+\While{$V(G') \neq \emptyset$}
+    \State Elegir vértice $v^*$ que minimiza aristas de relleno necesarias
+           para hacer $N(v^*)$ completo (min-fill)
+    \State $Q \gets \{v^*\} \cup N_{G'}(v^*)$
+           \Comment{clique de eliminación}
+    \State $\text{cliques}.\text{append}(|Q|)$
+    \State $w \gets \max(w,\; |Q| - 1)$
+    \State Agregar aristas de relleno entre vértices de $N_{G'}(v^*)$ no adyacentes
+    \State $\text{fill} \gets \text{fill} + \text{aristas de relleno agregadas}$
+    \State Eliminar $v^*$ de $G'$
+\EndWhile
+
+\Statex \textbf{Cálculo de features:}
+\State \textbf{approx\_treewidth} $\gets w$
+\State \textbf{chordal\_fill\_ratio}
+       $\gets \text{fill} \;/\; \max(|E|, 1)$
+\State \textbf{max\_chordal\_clique\_size}
+       $\gets \max(\text{cliques})$
+\State $p_k \gets |\{c \in \text{cliques}: c = k\}| / |\text{cliques}|$
+       para cada $k$ distinto
+\State \textbf{clique\_size\_entropy}
+       $\gets -\sum_k p_k \log_2 p_k$
+\end{algorithmic}
+\end{algorithm}

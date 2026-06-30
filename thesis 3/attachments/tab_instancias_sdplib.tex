@@ -1,0 +1,42 @@
+\begin{table}[htbp]
+\centering
+\caption{Familias de instancias de SDPLIB~1.2 preparadas en formato SDPA sparse.}
+\label{tab:instancias_sdplib}
+\small
+\begin{tabular}{lrp{3.2cm}p{5.8cm}}
+\toprule
+\textbf{Familia} & \textbf{\#} & \textbf{Aplicación} & \textbf{Características} \\
+\midrule
+\texttt{arch}      &  4 & Diseño estructural
+    & Dos bloques, bloque grande disperso ($n\approx174$), 174 restricciones. \\
+\texttt{control}   & 11 & Control óptimo
+    & Múltiples bloques, alta densidad de restricciones. \\
+\texttt{equalG}    &  2 & Max-Cut (partición igual)
+    & Un bloque denso, muchas restricciones. \\
+\texttt{gpp}       & 13 & Bisección de grafos
+    & Un bloque completo ($n\in[100,500]$), grafo agregado denso. \\
+\texttt{hinf}      & 15 & Control $H_\infty$
+    & Bloques pequeños y medianos, restricciones de control. \\
+\texttt{infd/infp} &  4 & Prueba de infactibilidad
+    & Formuladas para ser dual o primal infactibles. \\
+\texttt{maxG}      &  5 & Max-Cut (grafos grandes)
+    & Un bloque muy grande ($n\geq800$), pocas restricciones. \\
+\texttt{mcp}       & 13 & Max-Cut (relajación ligera)
+    & Un bloque completo, restricciones diagonales. \\
+\texttt{qap}       &  6 & Asignación cuadrática
+    & Múltiples bloques pequeños, estructura de permutación. \\
+\texttt{qpG}       &  2 & Programación cuadrática
+    & Bloque grande, estructura de grafo. \\
+\texttt{ss30}      &  1 & Diseño estructural (steady-state)
+    & Bloque único moderado, restricciones de estabilidad. \\
+\texttt{theta}     &  6 & Número theta de Shannon
+    & Un bloque completo ($n\in[104,300]$), pocas restricciones. \\
+\texttt{thetaG}    &  2 & Número theta (grafos grandes)
+    & Bloque grande ($n\geq800$). \\
+\texttt{truss}     &  8 & Diseño tipo truss
+    & Múltiples bloques, restricciones de equilibrio. \\
+\midrule
+\textbf{Total}     & \textbf{92} & & \\
+\bottomrule
+\end{tabular}
+\end{table}

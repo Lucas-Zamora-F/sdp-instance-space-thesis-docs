@@ -1,0 +1,25 @@
+\begin{algorithm}[H]
+\caption{Extracción de features estructurales básicas desde un archivo \texttt{.dat-s}}
+\label{alg:features_basicas}
+\begin{algorithmic}[1]
+\Require Archivo SDPA sparse $f$ con encabezado $(m, B, [s_1,\dots,s_B], b)$
+         y entradas $(\text{matno}, \text{blkno}, i, j, v)$
+\Ensure  Features: $n\_constraints$, $n\_blocks$, $avg\_block\_size$,
+         $max\_block\_size$, $sparsity$
+
+\State Leer primera línea de datos de $f$ (ignorando comentarios): $m \gets$ entero
+\State \textbf{n\_constraints} $\gets m$
+
+\State Leer tercera línea de datos de $f$: $[s_1, s_2, \dots, s_B]$
+\State \textbf{n\_blocks} $\gets B \gets \text{longitud}([s_1,\dots,s_B])$
+\State \textbf{avg\_block\_size} $\gets \frac{1}{B}\sum_{k=1}^{B} |s_k|$
+\State \textbf{max\_block\_size} $\gets \max_{k} |s_k|$
+
+\Statex
+\State \Comment{Calcular sparsity contando entradas no nulas}
+\State $\textit{nnz} \gets$ número de líneas de datos tras el encabezado (4 líneas)
+\State $\textit{total\_posible} \gets (m+1) \cdot \sum_{k=1}^{B} \text{tri}(s_k)$
+\Statex \hspace{2.5em} donde $\text{tri}(s) = |s|(|s|+1)/2$ si $s>0$, \;$|s|$ si $s<0$
+\State \textbf{sparsity} $\gets 1 - \textit{nnz} \,/\, \textit{total\_posible}$
+\end{algorithmic}
+\end{algorithm}

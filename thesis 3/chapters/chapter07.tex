@@ -1,3 +1,912 @@
-\chapter{Avances}
+\chapter{Protocolo experimental, implementación y avances}
+\label{ch:protocolo}
 \label{ch:Avances}
 
+\section{Protocolo experimental}
+\label{sec:avance_protocolo}
+
+El experimento se organiza como un pipeline secuencial cuyo objetivo es transformar
+instancias \acrshort{sdp} heterogéneas en un espacio de instancias interpretable y
+útil para comparar solvers.
+Cada etapa produce artefactos que son consumidos por la siguiente: instancias
+normalizadas, resultados de benchmarking, valores de features, metadata consolidada,
+modelo \acrshort{isa}, proyecciones de prueba y puntos candidatos para generación
+sintética.
+
+La unidad experimental es una instancia \acrshort{sdp} en formato SDPA sparse
+(\texttt{.dat-s}).
+Para cada instancia se calculan dos tipos de información.
+Primero, un vector de features estructurales extraídas directamente desde el archivo,
+sin resolver el problema.
+Segundo, un vector de métricas de rendimiento obtenido al ejecutar los solvers
+seleccionados.
+La metadata usada por \acrshort{isa} se construye combinando ambas fuentes mediante el
+nombre de la instancia.
+
+El protocolo de ejecución sigue el siguiente orden:
+\begin{enumerate}
+    \item descargar, preparar y validar las instancias en formato SDPA sparse;
+    \item ejecutar los solvers mediante runners independientes y registrar sus tiempos
+    de \acrshort{cpu};
+    \item extraer las features estructurales desde cada archivo \texttt{.dat-s};
+    \item consolidar features y benchmarking en \texttt{metadata.csv};
+    \item ejecutar \texttt{buildIS} para construir el espacio de instancias;
+    \item ejecutar \texttt{exploreIS} para proyectar metadata de prueba o nuevas
+    instancias sobre el modelo construido;
+    \item identificar regiones vacías del espacio como objetivos para generación
+    evolutiva.
+\end{enumerate}
+
+Para que una corrida sea considerada válida, las instancias deben superar la
+validación estructural del formato, las features deben producir valores finitos, los
+runners deben registrar salidas comparables y la metadata debe contener únicamente
+instancias con información suficiente para el análisis.
+Además, las etapas \texttt{buildIS} y \texttt{exploreIS} deben generar sus artefactos
+en los directorios correspondientes bajo \path{app/data/isa}.
+Con estos controles se evita que el espacio construido refleje errores de formato,
+filas incompletas o fallas de integración, en lugar de propiedades reales de las
+instancias.
+
+\section{Recopilación de instancias y transformación al formato SDPA sparse}
+\label{sec:avance_instancias}
+
+La primera etapa del pipeline consiste en obtener instancias \acrshort{sdp} de colecciones
+de benchmarks reconocidas, convertirlas al formato SDPA sparse (\texttt{.dat-s}) y
+validarlas estructuralmente antes de iniciar cualquier análisis.
+Esta etapa es el punto de entrada de todo el pipeline: la calidad y diversidad del
+conjunto de instancias condiciona directamente la solidez del espacio de instancias que
+se construirá posteriormente.
+
+\subsection{Fuentes de instancias}
+\label{subsec:avance_fuentes}
+
+El diseño experimental contempla cuatro fuentes de instancias con criterios de diversidad
+estructural y aplicada (véase Capítulo~\ref{ch:recoleccion}).
+Al cierre de Tesis~3, la etapa de recopilación se ha completado íntegramente para todas
+las fuentes contempladas en el diseño experimental: \textbf{SDPLIB~1.2}~\cite{borchersSDPLIB12Library1999},
+los benchmarks de Mittelmann~\cite{PlatoasueduFtpSparse_sdphtml},
+DIMACS~\cite{DIMACSLibraryMixeda} y Biq~Mac~\cite{BiqMacLibrarya}.
+Todas las instancias se encuentran descargadas y normalizadas al formato SDPA sparse
+(\texttt{.dat-s}), validadas estructuralmente y registradas en el catálogo del experimento.
+
+\subsection{Descarga y preparación}
+\label{subsec:avance_descarga}
+
+El proceso de recopilación se articuló en tres etapas implementadas como scripts
+independientes dentro del directorio \texttt{app/scripts/instances/}.
+
+En primer lugar, el script \texttt{download.py} se encarga de descargar todas las
+instancias desde las fuentes de benchmarks identificadas en el diseño experimental.
+Cada instancia descargada se almacena en su forma original bajo el directorio
+\texttt{app/data/instances/raw/}, organizada por fuente, sin ninguna modificación.
+
+A continuación, el script \texttt{prepare.py} toma las instancias crudas y las
+normaliza al formato SDPA sparse (\texttt{.dat-s}), asegurando una representación
+uniforme independientemente de la fuente de origen.
+Las instancias normalizadas se guardan en \texttt{app/data/instances/prepared/},
+listas para ser consumidas por el resto del pipeline sin procesamiento adicional.
+En esta etapa también se genera el catálogo \texttt{catalog.json}, que registra
+cada instancia con su fuente, ruta y estado de habilitación.
+
+Finalmente, un tercer script de validación recorre las instancias preparadas y
+verifica que cada archivo sea un SDPA sparse válido: comprueba la coherencia del
+encabezado (número de variables, bloques y tamaños), la dimensión del vector de
+costos $b$ y la integridad de las entradas no nulas
+$(\text{matno},\,\text{blkno},\,i,\,j,\,v)$.
+Las instancias que no superan esta verificación son marcadas y excluidas del
+catálogo, garantizando que el conjunto de datos de entrada al pipeline sea
+estructuralmente correcto.
+
+Al cierre de Tesis~3, este proceso se ha completado satisfactoriamente para todas
+las fuentes: la totalidad de las instancias fue descargada y normalizada sin errores,
+y el conjunto resultante superó íntegramente la validación estructural.
+
+\subsection{Familias de instancias preparadas}
+\label{subsec:avance_familias}
+
+La Tabla~\ref{tab:instancias_sdplib} describe las 14 familias de instancias de
+SDPLIB~1.2, indicando el número de instancias en cada una, la aplicación de origen
+y las características estructurales predominantes observadas en los archivos
+\texttt{.dat-s}.
+
+\input{../attachments/tab_instancias_sdplib}
+
+La diversidad estructural entre familias es notable y justifica el uso conjunto de estas
+instancias como base del espacio de instancias:
+
+\begin{itemize}
+    \item Las familias \texttt{mcp} y \texttt{gpp} presentan un \textbf{único bloque
+    semidefinido} de tamaño grande con restricciones de baja densidad cruzada, lo que
+    produce un sistema de Schur disperso pero de alta dimensión.
+
+    \item Las familias \texttt{control} e \texttt{hinf} tienen \textbf{múltiples bloques}
+    de tamaño moderado y una densidad de restricciones mayor, lo que genera sistemas de
+    Schur más densos y potencialmente peor condicionados.
+
+    \item Las familias \texttt{maxG} y \texttt{thetaG} incluyen \textbf{bloques muy
+    grandes} ($n \geq 800$) con pocas restricciones, lo que hace que el costo por
+    iteración esté dominado por la factorización del bloque semidefinido.
+
+    \item La familia \texttt{qap} incorpora una \textbf{estructura de permutación} que
+    genera múltiples bloques pequeños fuertemente interrelacionados.
+
+    \item Las instancias \texttt{infd*} e \texttt{infp*} son casos de prueba diseñados
+    explícitamente para ser dual o primal infactibles, útiles para verificar la robustez
+    de los solvers ante problemas sin solución.
+\end{itemize}
+
+\subsection{Formato SDPA sparse como representación canónica}
+\label{subsec:avance_formato}
+
+El formato SDPA sparse (\texttt{.dat-s}) fue adoptado como representación única para
+todas las instancias del experimento por las razones expuestas en el
+Capítulo~\ref{ch:disenio}.
+Cada archivo almacena el problema en la forma estándar primal mediante cinco campos en
+el encabezado —número de variables $m$, número de bloques $B$, tamaños de bloque y
+vector de costos $b$— seguidos de las entradas no nulas de las matrices de restricción,
+escritas como quíntuplas $(\text{matno},\,\text{blkno},\,i,\,j,\,v)$.
+
+Este formato permite extraer directamente todas las características estructurales
+definidas en el Capítulo~\ref{ch:disenio} sin resolver el problema, lo que garantiza
+la independencia entre features y métricas de rendimiento en el pipeline ISA.
+
+\subsection{Catálogo de instancias}
+\label{subsec:avance_catalogo}
+
+Todas las instancias preparadas quedan registradas en el archivo de configuración
+\texttt{app/config/instances/catalog.json}, que actúa como fuente de verdad del
+experimento.
+Cada entrada del catálogo contiene el nombre de la instancia, el nombre del archivo
+\texttt{.dat-s}, la fuente de origen y un indicador de habilitación que permite incluirla
+o excluirla del pipeline sin modificar los archivos de datos.
+Al cierre de Tesis~3, todas las instancias de las cuatro fuentes están habilitadas
+en el catálogo y disponibles para el pipeline.
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\section{Recopilación e instalación de solvers}
+\label{sec:avance_solvers}
+
+La segunda etapa del pipeline comprende la recopilación, instalación y configuración
+de los solvers \acrshort{sdp} que participarán en el experimento de benchmarking.
+Un requisito fundamental del diseño es que cada solver opere sobre las instancias en su
+forma nativa —sin adaptaciones al código fuente— y que sus salidas sean capturadas de
+manera uniforme para permitir la comparación directa entre algoritmos.
+
+\subsection{Solvers incorporados}
+\label{subsec:avance_solvers_seleccionados}
+
+Al cierre de Tesis~3, se han incorporado al pipeline los siguientes solvers, que cubren
+los principales enfoques algorítmicos y lenguajes de implementación presentes en la
+literatura de \acrshort{sdp} (véase Capítulo~\ref{ch:disenio}).
+La incorporación de solvers adicionales queda planificada para etapas posteriores,
+conforme avance el diseño experimental.
+
+\begin{itemize}
+    \item \textbf{CSDP}: implementado en C, resuelve \acrshort{sdp} mediante un método
+    de punto interior primal-dual con complementariedad
+    Helmberg-Kojima-Monteiro~\cite{borchersCSDP62014}.
+    Opera directamente sobre archivos en formato SDPA sparse y devuelve su resultado
+    a través de salida estándar y un código de retorno.
+
+    \item \textbf{SDPA}: implementado en C\texttt{++} con rutinas Fortran de álgebra
+    lineal, también acepta directamente el formato \texttt{.dat-s} y constituye la
+    implementación de referencia del propio formato SDPA
+    sparse~\cite{yamashitaImplementingExtensionSDPA2010}.
+
+    \item \textbf{SDPT3}: toolbox para MATLAB que implementa un método de punto interior
+    de trayectoria central~\cite{tutuncuSolvingSemidefiniteQuadratic2003}.
+    Requiere que las instancias sean cargadas en estructuras de datos MATLAB antes de
+    ser resueltas.
+
+    \item \textbf{SeDuMi}: toolbox para MATLAB que resuelve problemas cónicos mediante
+    un método de punto interior de paso largo~\cite{sturmUsingSeDuMi10b1999}.
+    Al igual que SDPT3, opera dentro del entorno MATLAB.
+\end{itemize}
+
+La heterogeneidad de lenguajes de implementación —C, C\texttt{++}/Fortran y MATLAB—
+introduce una complejidad de integración no trivial: cada solver tiene su propia
+interfaz de invocación, su propio esquema de salida y sus propias convenciones de
+reporte de estado.
+Esta diversidad es precisamente uno de los motivadores del diseño modular de runners
+descrito en la sección siguiente.
+
+\subsection{Almacenamiento sin modificaciones}
+\label{subsec:avance_solvers_almacenamiento}
+
+Cada solver fue descargado desde su fuente oficial e instalado íntegramente bajo el
+directorio \texttt{external/} del repositorio, en un subdirectorio propio e
+independiente por solver.
+En ningún caso se realizaron modificaciones al código fuente de los solvers: los
+binarios compilados, los archivos de configuración y las dependencias de cada uno se
+mantienen exactamente como los distribuyen sus autores.
+
+Esta decisión de diseño persigue cuatro objetivos.
+Primero, asegurar la \textbf{reproducibilidad}: cualquier resultado obtenido con un
+solver puede ser verificado ejecutando exactamente el mismo binario bajo las mismas
+condiciones.
+Segundo, facilitar la \textbf{actualización}: si en el futuro se dispone de una nueva
+versión de algún solver, basta con reemplazar su subdirectorio en \texttt{external/}
+sin necesidad de modificar ninguna otra parte del pipeline.
+Tercero, \textbf{eliminar decisiones arbitrarias de configuración}: al utilizar cada
+solver con sus parámetros por defecto, no es necesario justificar por qué se eligió
+un valor de tolerancia u otro, ni qué estrategia interna se activó o desactivó.
+La configuración es la que el propio autor del solver considera apropiada para el
+uso general, lo que evita que los resultados dependan de ajustes subjetivos.
+Cuarto, garantizar \textbf{comparaciones justas entre solvers}: al ejecutar todos los
+solvers en su configuración \emph{out-of-the-box}, sin afinamiento ni adaptación a
+las instancias del experimento, las diferencias de rendimiento observadas reflejan
+las capacidades intrínsecas de cada algoritmo y no el efecto de un ajuste manual
+favorecedor.
+
+\subsection{Runners por solver}
+\label{subsec:avance_solvers_runners}
+
+Para abstraer la heterogeneidad de interfaces, se desarrolló un \textbf{runner
+independiente} para cada solver, ubicado en \texttt{app/scripts/benchmark/}.
+Cada runner encapsula toda la lógica necesaria para invocar su solver correspondiente,
+capturar sus salidas y traducirlas a un formato interno uniforme:
+
+\begin{itemize}
+    \item \texttt{run\_csdp.py}: invoca el binario CSDP directamente mediante
+    \texttt{subprocess}, pasando el archivo \texttt{.dat-s} como argumento.
+    Captura la salida estándar, extrae el estado de solución (óptimo, infactible,
+    no acotado u otro), el valor primal, el valor dual y el tiempo de CPU reportado
+    por el propio solver.
+
+    \item \texttt{run\_sdpa.py}: opera de forma análoga al runner de CSDP, invocando
+    el ejecutable SDPA con el archivo de instancia y un archivo de parámetros,
+    y parseando la salida para extraer las métricas de rendimiento.
+
+    \item \texttt{run\_sdpt3.py}: lanza una sesión de MATLAB mediante
+    \texttt{subprocess}, carga la instancia en formato SDPA sparse usando las
+    rutinas de lectura provistas por SDPT3, ejecuta el solver y recupera los
+    resultados desde la salida de MATLAB.
+
+    \item \texttt{run\_sedumi.py}: sigue el mismo esquema que el runner de SDPT3,
+    adaptando la interfaz de invocación y el parseo de salida a las convenciones
+    propias de SeDuMi.
+\end{itemize}
+
+El script orquestador \texttt{run\_benchmark.py} coordina la ejecución de todos los
+runners sobre el conjunto de instancias habilitadas en el catálogo, aplica límites de
+tiempo por instancia, registra las salidas en \texttt{app/data/benchmark/} y gestiona
+los errores de ejecución sin interrumpir el resto del experimento.
+
+Esta arquitectura garantiza que agregar un nuevo solver al experimento requiera
+únicamente implementar un nuevo runner con la misma interfaz de salida, sin tocar
+el orquestador ni ningún otro componente del pipeline.
+
+\subsection{Contraste con valores óptimos esperados}
+\label{subsec:avance_solvers_contraste}
+
+Para verificar que los runners invocan correctamente cada solver y que las salidas
+capturadas son coherentes, los valores reportados por cada solver fueron
+contrastados con los valores óptimos conocidos de las instancias de referencia.
+Este contraste constituye una validación de extremo a extremo del pipeline de
+benchmarking: no solo confirma que el solver se ejecuta sin errores, sino que la
+solución obtenida es numéricamente correcta.
+
+Con este fin se utilizaron las instancias de \textbf{SDPLIB~1.2}, cuya documentación
+oficial~\cite{borchersSDPLIB12Library1999} reporta los valores óptimos esperados para
+cada instancia.
+Para cada instancia resuelta, el valor de la función objetivo reportado por el solver
+fue comparado contra el valor óptimo de referencia, verificando que la diferencia
+relativa se mantuviera dentro de los márgenes de tolerancia numérica.
+
+Este procedimiento permitió detectar de forma temprana problemas de invocación
+incorrecta, errores de parseo en la captura de salida o instancias que un solver
+determinado no puede resolver dentro del límite de tiempo establecido, diferenciando
+estos casos de verdaderas infactibilidades o problemas de convergencia del algoritmo.
+
+La Figura~\ref{fig:contraste_sdpt3_sdplib} muestra un ejemplo de este contraste para
+el solver SDPT3 sobre un subconjunto de instancias de SDPLIB~1.2.
+Para cada instancia se reporta el valor óptimo esperado según la documentación
+(\emph{Expected}), el valor de la función objetivo primal obtenido por SDPT3
+(\emph{OBJ\_PRIMAL}), el estado de la solución y el gap relativo porcentual.
+En todos los casos mostrados el solver reporta estado óptimo con gaps inferiores al
+$0.02\%$, lo que confirma que el runner captura correctamente las soluciones y que
+la ejecución es numéricamente coherente con los resultados de referencia.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{contraste_sdpt3_sdplib}
+    \caption{Contraste entre los valores óptimos esperados de SDPLIB~1.2 y los
+    valores reportados por SDPT3 (OBJ\_PRIMAL), con su estado de solución y gap
+    relativo porcentual.}
+    \label{fig:contraste_sdpt3_sdplib}
+\end{figure}
+
+\subsection{Estado al cierre de Tesis~3}
+\label{subsec:avance_solvers_estado}
+
+Al cierre de Tesis~3, todos los solvers han sido instalados correctamente y sus
+runners han sido implementados y verificados.
+La arquitectura de runners permite resolver el conjunto completo de instancias con
+cualquiera de los cuatro solvers de forma automatizada, almacenando las salidas en un
+formato uniforme independientemente del lenguaje de implementación de cada solver.
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\section{Selección e implementación de features}
+\label{sec:avance_features}
+
+La tercera etapa del pipeline corresponde a la extracción de las features
+de cada instancia \acrshort{sdp}.
+Estas features constituyen la entrada al análisis del espacio de instancias y deben
+ser calculadas directamente a partir de los archivos \texttt{.dat-s}, sin necesidad
+de resolver el problema, de modo que sean completamente independientes de las
+métricas de rendimiento de los solvers.
+
+Las features implementadas corresponden a las definidas en el
+Capítulo~\ref{ch:disenio}.
+Al cierre de Tesis~3, las quince features han sido implementadas exitosamente y sus
+valores han sido extraídos y almacenados para su uso en las etapas posteriores del
+pipeline.
+No se descarta la posibilidad de incorporar nuevas features o de eliminar alguna de
+las existentes en función de los resultados del análisis de instancias: el conjunto
+actual representa el diseño inicial y puede evolucionar en etapas futuras.
+
+\subsection{Arquitectura de extracción}
+\label{subsec:avance_features_arquitectura}
+
+Cada feature está implementada como un módulo Python independiente dentro del
+directorio \texttt{app/scripts/features/}, con una función \texttt{extract(path)}
+que recibe la ruta a un archivo \texttt{.dat-s} y devuelve el valor numérico de la
+feature correspondiente.
+El script orquestador \texttt{run\_features.py} itera sobre todas las instancias
+habilitadas en el catálogo, invoca cada módulo de extracción y consolida los
+resultados en \texttt{app/data/features/results.json}, que actúa como caché de
+features para el resto del pipeline.
+
+Este diseño modular permite agregar o retirar features sin modificar el orquestador
+ni ningún otro componente: basta con agregar o eliminar el módulo correspondiente
+en \texttt{app/scripts/features/}.
+
+La Figura~\ref{fig:app_selector_features} muestra el panel de features de la
+aplicación, donde se visualizan las 15 features implementadas
+—todas habilitadas— con su nombre, tipo de dato y descripción breve.
+Este panel permite habilitar o deshabilitar features individualmente antes de
+ejecutar la extracción, sin necesidad de modificar el código.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{app_selector_features}
+    \caption{Panel de selección de features en la aplicación del experimento.
+    Se muestran las 15~features implementadas, todas habilitadas
+    (\textit{15/15 enabled}), organizadas por grupos estructurales.}
+    \label{fig:app_selector_features}
+\end{figure}
+
+\subsection{Features estructurales básicas}
+\label{subsec:avance_features_basicas}
+
+Las primeras cinco features se obtienen directamente del encabezado y del conteo de
+entradas no nulas del archivo \texttt{.dat-s}, sin necesidad de construir ninguna
+estructura adicional.
+El Algoritmo~\ref{alg:features_basicas} describe el proceso de extracción.
+
+\input{../attachments/alg_features_basicas}
+
+El número de restricciones $m$ y el número de bloques $B$ se leen directamente del
+encabezado en tiempo $O(1)$.
+El tamaño promedio y máximo de bloque se calculan sobre el vector de tamaños
+$[s_1, \dots, s_B]$.
+La sparsity requiere un único recorrido del archivo para contar las entradas no nulas
+y compararlas con el total de posiciones triangulares superiores posibles en las
+$(m+1)$ matrices del problema.
+
+\subsection{Densidad de solapamiento de restricciones}
+\label{subsec:avance_features_overlap}
+
+Esta feature captura la densidad del grafo de co-ocurrencia entre restricciones:
+dos restricciones $A_i$ y $A_j$ son adyacentes si comparten al menos una posición
+no nula en algún bloque.
+El Algoritmo~\ref{alg:features_constraint_overlap} formaliza la construcción.
+
+\input{../attachments/alg_features_constraint_overlap}
+
+Una densidad alta indica que las restricciones comparten muchos coeficientes, lo que
+tiende a producir sistemas de Schur más densos y por tanto más costosos de resolver.
+
+\subsection{Features del grafo agregado}
+\label{subsec:avance_features_aggregate}
+
+El grafo agregado se construye unificando la estructura de esparsidad de todas las
+matrices del problema: dos índices de fila/columna dentro de un mismo bloque están
+conectados si existe al menos una entrada fuera de la diagonal en ese par de posiciones
+en alguna de las matrices $C, A_1, \dots, A_m$.
+El Algoritmo~\ref{alg:features_aggregate_graph} describe la construcción y las tres
+features derivadas de este grafo.
+
+\input{../attachments/alg_features_aggregate_graph}
+
+La densidad del grafo agregado refleja cuán acopladas están las variables dentro de
+cada bloque.
+El número de componentes conexas y la fracción de la componente más grande
+caracterizan la conectividad global del problema, relevante para predecir el
+comportamiento del precondicionador interno de los solvers de punto interior.
+
+\subsection{Features de chordalidad}
+\label{subsec:avance_features_chordal}
+
+Las cuatro features de chordalidad se obtienen ejecutando una heurística de
+eliminación min-fill sobre el grafo agregado.
+Esta heurística produce una extensión cordal del grafo, cuyos cliques de eliminación
+aproximan la estructura de árbol de descomposición que determinados solvers explotan
+para reducir el costo computacional.
+El Algoritmo~\ref{alg:features_chordal} detalla el procedimiento.
+
+\input{../attachments/alg_features_chordal}
+
+El treewidth aproximado y la ratio de relleno cordal son predictores conocidos del
+costo de factorización de Cholesky en problemas \acrshort{sdp} con estructura
+dispersa~\cite{vandenbergheChordalGraphsCopositive2015}.
+La entropía del tamaño de cliques complementa estas medidas capturando la
+heterogeneidad en la distribución de los cliques de eliminación.
+
+\subsection{Features de la matriz de Gram de Schur}
+\label{subsec:avance_features_schur}
+
+Las últimas dos features caracterizan la matriz de Gram asociada al sistema de Schur
+que los solvers de punto interior construyen en cada iteración.
+Dado que esta matriz determina el costo y la estabilidad numérica de la etapa de
+factorización, sus propiedades son predictoras directas del rendimiento del solver.
+El Algoritmo~\ref{alg:features_schur_gram} describe su construcción y extracción.
+
+\input{../attachments/alg_features_schur_gram}
+
+La densidad de la matriz de Gram indica cuántos pares de restricciones tienen
+matrices con solapamiento en sus soportes; el logaritmo del número de condición
+aproxima la dificultad numérica esperada de la factorización de Cholesky del sistema
+de Schur.
+
+\subsection{Estado al cierre de Tesis~3}
+\label{subsec:avance_features_estado}
+
+Al cierre de Tesis~3, las quince features han sido implementadas, verificadas y
+ejecutadas sobre el conjunto de instancias disponibles.
+Los valores extraídos quedan almacenados en \texttt{app/data/features/results.json}
+y están disponibles para ser consumidos por las etapas de generación de metadatos
+e ISA del pipeline.
+El conjunto de features actual es el punto de partida del diseño experimental y
+podrá ser ampliado o depurado en etapas futuras en función de los resultados del
+análisis del espacio de instancias.
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\section{Instance Space Analysis}
+\label{sec:avance_isa}
+
+La cuarta etapa del pipeline aplica el framework \acrshort{isa} sobre la metadata
+consolidada para construir y explorar el espacio de instancias \acrshort{sdp}.
+Esta etapa comprende la generación de la metadata de entrada, la ejecución de
+\texttt{buildIS} para construir el modelo del espacio de instancias, y la ejecución
+de \texttt{exploreIS} para proyectar nuevas instancias sobre el espacio construido.
+
+\subsection{Generación de la metadata}
+\label{sec:avance_metadata}
+
+La primera subetapa consiste en consolidar los resultados de features y benchmarking
+en un único archivo de metadata, que es el formato de entrada requerido por
+\acrshort{isa} para construir el espacio de instancias.
+
+\subsubsection{Script de unificación}
+\label{subsec:avance_metadata_script}
+
+El script \texttt{generate\_metadata.py}, ubicado en
+\texttt{app/scripts/metadata/}, toma como entrada los resultados de la extracción
+de features (\texttt{app/data/features/results.json}) y los resultados del
+benchmarking (\texttt{app/data/benchmark/results.json}), y los combina en un único
+archivo \texttt{metadata.csv}.
+
+Antes de combinar ambas fuentes, el script verifica que las instancias presentes en
+los dos conjuntos de resultados coincidan, calculando la intersección entre el
+conjunto de instancias con features extraídas y el conjunto de instancias con al
+menos una corrida de benchmark registrada.
+Solo las instancias presentes en ambos conjuntos son incluidas en la metadata final,
+evitando filas incompletas que podrían introducir valores nulos o inconsistentes en
+el análisis posterior.
+
+Adicionalmente, el script agrega una columna \texttt{Source}, cuyo criterio de
+etiquetado es configurable: puede identificar la \textbf{fuente de origen} de cada
+instancia (por ejemplo, \texttt{sdplib}, \texttt{mittelmann}, \texttt{dimacs} o
+\texttt{biqmac}) según el catálogo de instancias, o bien la \textbf{familia de
+problema} \acrshort{sdp} a la que pertenece (por ejemplo, Max-Cut, bisección de
+grafos, número theta de Shannon, control óptimo, entre otras), según el archivo de
+configuración de familias.
+Esta columna permite a \acrshort{isa} y a los análisis posteriores distinguir y, de
+ser necesario, agrupar o filtrar instancias tanto por su procedencia como por su
+naturaleza algorítmica.
+
+\subsubsection{Esquema del archivo de metadata}
+\label{subsec:avance_metadata_esquema}
+
+El archivo \texttt{metadata.csv} resultante sigue el esquema requerido por
+\acrshort{isa}:
+\begin{itemize}
+    \item \texttt{Instances}: nombre de la instancia.
+    \item \texttt{Source}: fuente de origen de la instancia.
+    \item \texttt{feature\_*}: una columna por cada feature habilitada
+    (véase Sección~\ref{sec:avance_features}).
+    \item \texttt{algo\_*}: una columna por cada solver incorporado
+    (véase Sección~\ref{sec:avance_solvers}), con el tiempo de \acrshort{cpu}
+    reportado por el solver para esa instancia.
+\end{itemize}
+
+La Figura~\ref{fig:metadata_csv_ejemplo} muestra un extracto del archivo
+\texttt{metadata.csv} generado, donde se observan la columna \texttt{Instances}, la
+columna \texttt{Source} etiquetada por familia de problema, un subconjunto de
+columnas \texttt{feature\_*} y las columnas \texttt{algo\_*} con el tiempo de
+\acrshort{cpu} reportado por cada solver.
+Algunas de las familias de problema observadas en el extracto son:
+\begin{itemize}
+    \item \texttt{truss\_topology\_design}
+    \item \texttt{control\_system\_theory}
+    \item \texttt{graph\_equipartition}
+    \item \texttt{graph\_partitioning}
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{metadata_csv_ejemplo}
+    \caption{Extracto del archivo \texttt{metadata.csv} generado por el pipeline,
+    con la columna \texttt{Source} etiquetada por familia de problema \acrshort{sdp}.}
+    \label{fig:metadata_csv_ejemplo}
+\end{figure}
+
+Este archivo queda almacenado en \texttt{app/data/metadata/metadata.csv} y
+constituye la entrada directa de la etapa \texttt{buildIS} del pipeline ISA,
+descrita en la sección siguiente.
+
+\subsubsection{Estado al cierre de Tesis~3}
+\label{subsec:avance_metadata_estado}
+
+Al cierre de Tesis~3, el script de generación de metadata ha sido implementado y
+verificado, y \texttt{metadata.csv} se genera correctamente a partir de los
+resultados de features y benchmarking disponibles, quedando listo para ser
+consumido por el pipeline ISA.
+
+\subsection{buildIS}
+\label{subsec:avance_build_is}
+
+Una vez generada la metadata consolidada, la siguiente subetapa del pipeline consiste
+en construir el espacio de instancias mediante el procedimiento \texttt{buildIS} del
+framework \acrshort{isa}.
+Para ello, el archivo \texttt{metadata.csv} producido en la etapa anterior se utiliza
+como entrada directa del script MATLAB
+\path{app/external/InstanceSpace-master/buildIS.m}, encargado de estimar la
+proyección, seleccionar las features relevantes y generar el modelo del espacio de
+instancias.
+
+La ejecución de \texttt{buildIS.m} se realiza desde el runner Python
+\path{app/scripts/isa/run_build_is.py}.
+Este runner encapsula la invocación de MATLAB, prepara las rutas de entrada
+necesarias, ejecuta el procedimiento \texttt{buildIS} y captura la salida producida
+durante el proceso.
+De esta forma, la integración con \acrshort{isa} queda incorporada al pipeline
+general del experimento sin requerir ejecución manual desde el entorno MATLAB.
+
+Los resultados generados por esta etapa, junto con los archivos auxiliares y la
+salida capturada durante la ejecución, se almacenan en
+\path{app/data/isa/build_is}.
+Este directorio concentra los artefactos necesarios para inspeccionar el espacio de
+instancias construido y sirve como punto de entrada para las etapas posteriores de
+exploración mediante \texttt{exploreIS}.
+
+\subsubsection{Exploración interactiva de resultados}
+\label{subsec:avance_build_is_exploracion}
+
+Además del almacenamiento de los archivos generados por \texttt{buildIS}, la
+aplicación desarrollada incorpora pestañas específicas para explorar estos resultados
+con mayor profundidad.
+Estas vistas permiten inspeccionar gráficamente el espacio de instancias construido,
+facilitando una interpretación más directa de la distribución de problemas,
+algoritmos y regiones de desempeño dentro de la proyección bidimensional.
+
+La exploración se apoya en gráficos interactivos que permiten modificar la vista del
+espacio, aplicar zoom sobre regiones de interés y desplazar la proyección para
+examinar agrupamientos locales.
+Asimismo, la interfaz permite identificar qué instancia corresponde a cada punto del
+gráfico, lo que facilita relacionar la posición geométrica de una instancia con sus
+features estructurales, su fuente de origen y el rendimiento observado de los
+solvers.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{app_result_plot}
+    \caption{Vista interactiva de resultados de \texttt{buildIS} en la aplicación,
+    con herramientas de exploración gráfica para analizar la proyección del espacio
+    de instancias.}
+    \label{fig:app_result_plot}
+\end{figure}
+
+Estas funcionalidades cumplen un rol complementario al análisis automático realizado
+por \texttt{buildIS}: mientras el framework genera el modelo del espacio y sus
+artefactos principales, la aplicación permite revisar visualmente dichos resultados,
+detectar patrones de agrupamiento, reconocer instancias atípicas y estudiar con más
+detalle las zonas donde el comportamiento de los algoritmos cambia de forma
+significativa.
+
+\subsection{exploreIS}
+\label{subsec:avance_explore_is}
+
+Una vez construido el espacio de instancias mediante \texttt{buildIS}, la etapa
+\texttt{exploreIS} permite proyectar nuevas instancias sobre el modelo ya generado.
+Esta subetapa utiliza como insumo el archivo \texttt{model.mat} producido por
+\texttt{buildIS} y un archivo de metadata de prueba
+\texttt{metadata\_test.csv}, que contiene las features y métricas asociadas a las
+instancias que se desean ubicar dentro del espacio construido.
+
+La ejecución se realiza mediante el script MATLAB
+\path{app/external/InstanceSpace-master/exploreIS.m}, invocado desde el runner
+Python \path{app/scripts/isa/run_explore_is.py}.
+Este runner verifica que los archivos requeridos existan en
+\path{app/data/isa/explore_is}, prepara la metadata de entrada y ejecuta MATLAB de
+forma automatizada.
+Además, incorpora pasos de compatibilidad necesarios para que las instancias de
+prueba sean consistentes con el modelo entrenado por \texttt{buildIS}: filtra las
+columnas de algoritmos que no sobrevivieron a la etapa de construcción del espacio
+y ajusta internamente ciertas orientaciones de vectores del modelo antes de llamar a
+\texttt{exploreIS}.
+
+Todos los resultados de esta subetapa se almacenan en
+\path{app/data/isa/explore_is}, incluyendo archivos \texttt{.mat}, salidas tabulares
+y gráficos generados por \acrshort{isa}.
+De este modo, el pipeline permite separar claramente la construcción del espacio de
+instancias, realizada una vez sobre la metadata base, de la exploración posterior de
+nuevas instancias, que puede repetirse sobre distintos conjuntos de prueba sin
+reconstruir completamente el modelo.
+
+\subsubsection{Carga de metadata de prueba}
+\label{subsec:avance_explore_is_metadata_prueba}
+
+La aplicación desarrollada incorpora una interfaz para cargar nuevas instancias y
+prepararlas como metadata de prueba para \texttt{exploreIS}.
+Desde esta vista, el usuario puede agregar archivos de instancia adicionales al
+experimento; para cada una de ellas, la aplicación calcula automáticamente las
+features estructurales requeridas por el modelo y ejecuta los solvers seleccionados
+para obtener las métricas de rendimiento correspondientes.
+Con esta información se construye el archivo \texttt{metadata\_test.csv}, que queda
+listo para ser utilizado por el runner de \texttt{exploreIS}.
+
+Esta funcionalidad permite realizar pruebas controladas sin modificar la metadata
+base usada por \texttt{buildIS}.
+Las nuevas instancias se tratan como un conjunto externo que se proyecta sobre el
+espacio ya construido, lo que permite estudiar cómo se ubican problemas no utilizados
+durante la construcción del modelo y evaluar si caen dentro de regiones conocidas o
+en zonas periféricas del espacio de instancias.
+
+Además, la aplicación permite comparar visualmente el espacio de instancias original
+generado por \texttt{buildIS} con el resultado obtenido al incorporar la metadata de
+prueba mediante \texttt{exploreIS}.
+Esta comparación facilita observar si las nuevas instancias preservan la estructura
+global del espacio, si aparecen agrupamientos adicionales o si existen desviaciones
+relevantes respecto de la distribución original.
+De esta forma, la herramienta no solo automatiza la generación de la metadata de
+prueba, sino que también entrega una vista comparativa para analizar el efecto de
+incorporar nuevas instancias al proceso de exploración.
+
+\subsection{Estado al cierre de Tesis~3}
+\label{subsec:avance_isa_estado}
+
+Al cierre de Tesis~3, la etapa de \acrshort{isa} se encuentra implementada y
+funcional dentro del pipeline del experimento.
+La generación de metadata, la construcción del espacio mediante \texttt{buildIS}, la
+proyección de nuevas instancias mediante \texttt{exploreIS} y la exploración visual
+desde la aplicación han sido integradas en un flujo de trabajo automatizado.
+
+En particular, el sistema permite generar la metadata base a partir de features y
+resultados de benchmarking, ejecutar \texttt{buildIS} para obtener el modelo del
+espacio de instancias, preparar metadata de prueba para nuevas instancias, ejecutar
+\texttt{exploreIS} sobre el modelo construido y revisar los resultados mediante
+vistas gráficas interactivas.
+Los artefactos producidos por cada subetapa quedan almacenados en los directorios
+correspondientes bajo \path{app/data/isa}, permitiendo repetir, inspeccionar y
+comparar los resultados sin intervención manual sobre los scripts MATLAB.
+
+Con esto, el pipeline ISA queda disponible para las siguientes etapas del trabajo:
+analizar la distribución de las instancias \acrshort{sdp}, estudiar regiones de buen
+y mal desempeño de los solvers, e incorporar nuevas instancias al espacio para
+evaluar su comportamiento relativo frente al conjunto original.
+
+% ─────────────────────────────────────────────────────────────────────────────
+
+\section{Algoritmos genéticos}
+\label{sec:avance_algoritmos_geneticos}
+
+La siguiente etapa del pipeline corresponde a la generación de nuevas instancias
+\acrshort{sdp} mediante algoritmos genéticos.
+Esta línea de trabajo busca utilizar el espacio de instancias como guía: las
+instancias no se modifican de forma arbitraria, sino que evolucionan para desplazarse
+hacia regiones específicas del plano \acrshort{isa}, especialmente zonas poco
+pobladas o candidatas a entregar nueva información sobre el comportamiento de los
+solvers.
+
+El proyecto cuenta con una versión funcional previa de esta infraestructura, utilizada
+como base técnica para la integración con el pipeline actual.
+Esta implementación permite representar, modificar, evaluar y guardar instancias
+\acrshort{sdp} en formato SDPA sparse (\texttt{.dat-s}), trabajando directamente
+sobre su estructura interna: número de restricciones, bloques semidefinidos, tamaños
+de bloque, coeficientes del vector $b$ y entradas no nulas de las matrices.
+
+\subsection{Representación y operadores evolutivos}
+\label{subsec:avance_ga_representacion}
+
+La representación base de las instancias se organiza alrededor de rutinas para leer y
+escribir archivos \texttt{.dat-s}, extraer características estructurales y aplicar
+operadores evolutivos.
+Las features usadas por el motor genético para ubicar una instancia en el espacio
+\acrshort{isa} son un subconjunto estructural calculable sin resolver el problema:
+tamaño promedio de bloque, tamaño máximo de bloque, número de bloques, número de
+restricciones y sparsity.
+Estas características permiten evaluar rápidamente una instancia generada y
+proyectarla al espacio bidimensional usando los parámetros de normalización y la
+matriz de proyección producidos por \texttt{buildIS}.
+
+El sistema implementa mutaciones en distintos niveles de granularidad.
+Algunas operaciones realizan cambios finos, como perturbar valores numéricos o
+agregar y remover entradas no nulas.
+Otras producen cambios estructurales mayores, como agregar o remover restricciones,
+agregar o remover bloques, redimensionar bloques, dividir un bloque en dos o fusionar
+bloques existentes.
+Después de cada modificación, la instancia se sanea para preservar índices válidos,
+coherencia entre cabecera y datos, y una estructura compatible con el formato SDPA
+sparse.
+
+Además de las mutaciones, se implementó un operador de cruzamiento entre dos
+instancias.
+Este operador utiliza un punto de corte sobre las restricciones y combina matrices de
+los padres cuando sus estructuras de bloques son compatibles.
+Si las estructuras no son compatibles, el sistema evita producir un hijo inválido y
+recurre a una perturbación del primer padre.
+Con esto, el algoritmo mantiene diversidad evolutiva sin sacrificar la validez
+estructural de las instancias generadas.
+
+\subsection{Evolución hacia puntos objetivo}
+\label{subsec:avance_ga_puntos_objetivo}
+
+El motor principal de evolución está diseñado para aproximar instancias candidatas a
+un punto objetivo $(Z_1,Z_2)$ dentro del espacio de instancias.
+Para cada individuo se calculan sus features, se normalizan usando los parámetros del
+modelo \acrshort{isa} y se proyectan al plano bidimensional.
+La función de fitness premia a las instancias cuya proyección queda más cerca del
+punto objetivo:
+
+\[
+    F(v) = \frac{1}{d(v,z^\star)^2 + \varepsilon},
+\]
+
+donde $d(v,z^\star)$ es la distancia entre la proyección de la instancia candidata y
+el objetivo, y $\varepsilon$ evita divisiones por cero.
+De esta forma, la búsqueda evolutiva queda alineada con la geometría del espacio de
+instancias: un individuo tiene mayor aptitud mientras más cerca se encuentre de la
+región que se desea poblar.
+
+La población inicial se construye a partir de instancias reales disponibles en el
+proyecto.
+Para acelerar la inicialización, el motor puede reutilizar coordenadas precalculadas
+cuando existen archivos de coordenadas producidos por \texttt{buildIS} o
+\texttt{exploreIS}.
+Luego se seleccionan como semillas las instancias más cercanas al punto objetivo y se
+completa la población mediante mutaciones ligeras.
+
+Durante la evolución se utilizan selección por ranking lineal, elitismo y cruzamiento
+con probabilidad configurable.
+La intensidad de mutación es adaptativa: cuando la población se acerca al objetivo,
+las mutaciones tienden a ser más finas; cuando el progreso se estanca, aumenta la
+probabilidad de aplicar cambios estructurales más agresivos.
+Esta estrategia combina explotación local con saltos más amplios cuando el algoritmo
+deja de mejorar.
+Cuando una instancia alcanza la distancia mínima definida por el umbral de
+proximidad, se guarda como una instancia alcanzada en formato \texttt{.dat-s}, lista
+para ser incorporada posteriormente al conjunto de instancias normalizadas.
+
+\subsection{Identificación de espacios vacíos}
+\label{subsec:avance_ga_espacios_vacios}
+
+Para que el algoritmo genético pueda generar instancias con un propósito experimental
+claro, primero es necesario identificar regiones del espacio de instancias que se
+encuentran poco pobladas.
+Estas regiones representan zonas donde el conjunto actual de benchmarks no entrega
+suficiente cobertura, por lo que constituyen candidatos naturales para orientar la
+generación de nuevas instancias \acrshort{sdp}.
+
+La aplicación desarrollada incorpora una vista destinada a explorar estos espacios
+vacíos de manera visual e interactiva.
+A partir del espacio construido por \texttt{buildIS}, la interfaz permite ubicar
+automáticamente puntos candidatos dentro de regiones con baja densidad de instancias.
+Cada punto queda asociado a sus coordenadas en la proyección bidimensional, lo que
+permite utilizarlo posteriormente como objetivo para el proceso evolutivo.
+
+La Figura~\ref{fig:app_empty_space} muestra esta funcionalidad dentro de la
+aplicación.
+En ella se visualiza el espacio de instancias junto con los puntos candidatos
+detectados automáticamente, facilitando la selección de zonas que podrían ser
+pobladas mediante nuevas instancias generadas por el algoritmo genético.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{app_empty_space}
+    \caption{Identificación automática de puntos candidatos en regiones vacías del
+    espacio de instancias desde la aplicación desarrollada.}
+    \label{fig:app_empty_space}
+\end{figure}
+
+Esta etapa cumple el rol de puente entre el análisis descriptivo del espacio y la
+generación activa de nuevas instancias.
+En lugar de seleccionar puntos objetivo de forma manual o arbitraria, la aplicación
+entrega coordenadas candidatas derivadas de la geometría del espacio construido,
+permitiendo que el algoritmo genético se oriente hacia zonas con menor cobertura
+experimental.
+
+\subsection{Exploración guiada y retargeting}
+\label{subsec:avance_ga_exploracion_guiada}
+
+Además del modo dirigido a un punto objetivo fijo, la infraestructura genética incluye
+un modo de exploración guiada de regiones vacías.
+En este caso, el objetivo no es alcanzar un único punto predefinido, sino estudiar qué
+zonas del espacio son alcanzables mediante mutaciones sucesivas y cómo se expande la
+nube de instancias generadas.
+
+El motor mantiene un registro de los puntos visitados en el plano \acrshort{isa}.
+Cada cierto número de generaciones estima la región más vacía del espacio mediante
+una grilla sobre la proyección y el polígono de límites del espacio de instancias.
+Luego reorienta la población hacia esa zona mediante una estrategia de
+\emph{retargeting}.
+Se consideran tres modos: selección de semillas cercanas a la región vacía detectada,
+selección aleatoria de semillas y selección diversa orientada a maximizar la cobertura
+del espacio.
+
+Este componente transforma la generación sintética en una herramienta exploratoria.
+En lugar de producir únicamente variaciones cercanas a instancias conocidas, permite
+analizar qué regiones del espacio \acrshort{isa} son más fáciles o más difíciles de
+alcanzar mediante evolución, y entrega información útil para ajustar los operadores
+genéticos.
+
+\subsection{Integración con la aplicación}
+\label{subsec:avance_ga_aplicacion}
+
+La integración prevista con la aplicación permite conectar los motores genéticos con
+el flujo visual del proyecto.
+Desde la interfaz se pueden cargar puntos candidatos, activar o desactivar objetivos,
+ejecutar el algoritmo genético para cada punto activo y visualizar el avance de cada
+generación sobre el canvas del espacio de instancias.
+
+Durante una ejecución, la interfaz puede mostrar el punto objetivo, la población
+actual, la trayectoria del mejor individuo, los puntos que alcanzaron el umbral de
+proximidad y los retargets hacia regiones vacías.
+Al finalizar, las instancias alcanzadas pueden guardarse como archivos
+\texttt{.dat-s} e incorporarse al flujo posterior del pipeline: extracción de
+features, evaluación con solvers, generación de metadata, ejecución de
+\texttt{exploreIS} y comparación contra las instancias originales.
+
+La configuración del algoritmo se separa del código fuente mediante un archivo de
+parámetros.
+Entre los parámetros principales se consideran criterios de parada, tamaño de
+población, número de padres e hijos por generación, tasas de mutación y cruzamiento,
+fracción de elitismo, umbral de proximidad, frecuencia de retargeting, radio de
+región objetivo y número de trabajadores para paralelización.
+Esta separación facilita experimentar con distintas estrategias de búsqueda sin
+modificar la implementación del motor.
+
+\subsection{Estado al cierre de Tesis~3}
+\label{subsec:avance_ga_estado}
+
+Al cierre de Tesis~3, se dispone de una implementación funcional previa del algoritmo
+genético, que demuestra la factibilidad de representar instancias \acrshort{sdp} en
+formato SDPA sparse, aplicar operadores evolutivos, proyectar candidatos al espacio
+\acrshort{isa} y guiar la búsqueda hacia puntos objetivo o regiones vacías.
+
+Los avances concretos alcanzados incluyen la representación manipulable de instancias
+\texttt{.dat-s}, mutaciones numéricas y estructurales, cruzamiento entre instancias
+compatibles, sanitización posterior a la generación, evaluación mediante features,
+fitness basado en distancia al objetivo, selección con elitismo, mutación adaptativa,
+reutilización de coordenadas precalculadas y exploración guiada de regiones vacías.
+
+La siguiente etapa consiste en integrar completamente esta implementación con la
+versión actual del pipeline y validar experimentalmente la calidad de las instancias
+generadas.
+Para ello será necesario ejecutar los solvers sobre las instancias sintéticas,
+generar su metadata, proyectarlas mediante \texttt{exploreIS} y comparar la cobertura
+del espacio antes y después de incorporar las instancias generadas.
