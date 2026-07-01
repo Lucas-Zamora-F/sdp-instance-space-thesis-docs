@@ -63,10 +63,14 @@ resultante, independientemente del origen del problema.
 
 El tiempo de \acrshort{cpu} fue seleccionado como métrica principal de rendimiento por ser la medida más directamente comparable entre solvers de
 distintas familias algorítmicas e implementaciones. Las métricas alternativas, como el número de iteraciones, son incomparables entre métodos de
-punto interior y métodos de Lagrangiano aumentado dado que cada iteración tiene un costo muy diferente.
+punto interior y métodos de Lagrangiano aumentado dado que cada iteración tiene un costo muy diferente. Esta elección se alinea con el enfoque
+de selección de algoritmos, donde el desempeño observado sobre cada instancia permite comparar alternativas dentro de un portafolio
+\cite{riceAlgorithmSelectionProblem1976}.
 
 El etiquetado binario de rendimiento (bueno/malo) sigue el criterio de umbral relativo de \acrshort{isa}:
-un solver se considera \textit{bueno} en una instancia si su tiempo de \acrshort{cpu} no supera el $55\%$ del tiempo del solver más rápido en esa
-instancia ($\beta = 0.55$). Este umbral, recomendado por la metodología, tolera una penalización moderada respecto al óptimo sin considerar
-competitivos a solvers que resulten significativamente más lentos. Las instancias para las que ningún solver converge dentro del límite de
-$1200$ segundos se excluyen del análisis de rendimiento.
+un solver se considera \textit{bueno} en una instancia si su tiempo de \acrshort{cpu} se mantiene dentro de una tolerancia relativa respecto del
+menor tiempo observado en esa instancia. En este trabajo se utiliza $\beta=0.55$, de modo que, para tiempos de ejecución, un solver se etiqueta
+como bueno si no excede en más de un $55\%$ el tiempo del solver más rápido. Este umbral, usado dentro de la metodología \acrshort{isa}, tolera
+una penalización moderada respecto al óptimo sin considerar competitivos a solvers que resulten significativamente más lentos
+\cite{munozAndremunInstanceSpaceFebruary2023a}. Las instancias para las que ningún solver converge dentro del límite de $1200$ segundos se excluyen
+del análisis de rendimiento.

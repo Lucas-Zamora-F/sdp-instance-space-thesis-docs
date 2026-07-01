@@ -34,19 +34,15 @@ de una misma familia.
     subproblema, diseñado específicamente para instancias de gran escala donde los métodos de punto
     interior resultan prohibitivos en memoria. Representa una familia algorítmica distinta a los anteriores.
 
-    \item \textbf{DSDP 5.8}\cite{bensonDSDP5SoftwareSemidefinite}: desarrollado por Steven J. Benson,
+    \item \textbf{DSDP 5.8}\cite{bensonAlgorithm875DSDP5software2008}: desarrollado por Steven J. Benson,
     Yinyu Ye y Xiong Zhang. Implementa un método de escalamiento dual, que construye iterados solo en
     el espacio dual y evalúa factibilidad primal a posteriori. Su bajo requerimiento de memoria lo hace
     destacar para instancias con muchas restricciones.
 
-    \item \textbf{CSDP 6.2.0}\cite{borchersCSDPLibrarySemide}: desarrollado por Brian Borchers. Implementa
+    \item \textbf{CSDP 6.2.0}\cite{borchersCSDPLibrarySemidefinite1999}: desarrollado por Brian Borchers. Implementa
     un método de punto interior primal-dual en C, portátil y sin dependencias externas. Permite una línea
     base de comparación limpia, independiente de entornos MATLAB.
 \end{itemize}
-
-La combinación de tres solvers de punto interior primal-dual (SDPT3, SeDuMi, SDPA), un método de Lagrangiano aumentado (SDPNAL+),
-un método de escalamiento dual (DSDP) y un ejecutable C puro (CSDP) garantiza que las diferencias de rendimiento observadas en el
-espacio de instancias sean atribuibles a propiedades estructurales del problema y no a artefactos de una sola familia algorítmica.
 
 \section{Selección del Formato Unificado}
 \label{sec:seleccion_formato}
@@ -59,7 +55,7 @@ almacena únicamente las entradas no nulas del triángulo superior, lo que es ef
 \section{Selección de Features}
 \label{sec:seleccion_features}
 
-Las características deben satisfacer tres requisitos para ser útiles en \acrshort{isa}: (i) computabilidad directa desde la instancia sin resolverla,
+Las características (features) deben satisfacer tres requisitos para ser útiles en \acrshort{isa}: (i) computabilidad directa desde la instancia sin resolverla,
 para garantizar independencia entre features y rendimiento; (ii) relevancia para la dificultad del problema desde un punto de vista teórico o empírico;
 y (iii) diversidad suficiente para separar distintas familias de instancias en el espacio proyectado.
 
@@ -71,7 +67,7 @@ $V_b=\{1,\ldots,n_b\}$ y existe una arista $\{i,j\}\in E_b$, con $i\neq j$, si l
 $C$ o en alguna matriz de restricción.
 
 \newpage
-\paragraph{Tamaño y bloqueo.}
+\paragraph{Tamaño y bloques.}
 Estas características describen la dimensión básica de la formulación y la estructura
 de bloques de la variable semidefinida.
 El número de restricciones (\path{n_constraints}) corresponde al valor $m$ de la
@@ -145,17 +141,17 @@ de su mayor componente conexa y reporta la fracción máxima:
     \frac{\max_{S\in \mathrm{CC}(G_b)} |S|}{n_b}.
 \]
 
-\paragraph{Estructura chordal y ancho de árbol.}
+\paragraph{Estructura cordal y \textit{treewidth}.}
 Estas características se calculan aplicando una heurística determinista
 \textit{min-fill} a cada grafo agregado.
-El ancho de árbol aproximado (\path{approx_treewidth}) toma el mayor grado de
+El \textit{treewidth} aproximado (\path{approx_treewidth}) toma el mayor grado de
 eliminación observado.
 Si $\pi_b$ es el orden de eliminación y $N_{\pi_b}^{+}(v)$ son los vecinos activos de
 $v$ al eliminarlo:
 \[
     f_{10} = \max_b \max_{v\in V_b}|N_{\pi_b}^{+}(v)|.
 \]
-La razón de llenado chordal (\path{chordal_fill_ratio}) compara el número de aristas
+La razón de llenado cordal (\path{chordal_fill_ratio}) compara el número de aristas
 del grafo extendido con el número de aristas originales:
 \[
     f_{11} =
@@ -177,11 +173,12 @@ relativa del tamaño $k$, entonces:
     f_{13} = -\sum_k p_k\log_2 p_k.
 \]
 
-\paragraph{Matriz de Gram de Schur.}
-Estas características describen la estructura algebraica del sistema de Schur
-inducido por las matrices de restricción.
-La densidad de la matriz de Gram de Schur (\path{schur_gram_density}) define primero
-la matriz $G\in\mathbb{R}^{m\times m}$ mediante el producto de Frobenius:
+\paragraph{Matriz de Gram asociada al sistema de Schur.}
+Estas características no construyen el complemento de Schur completo que aparece dentro
+de un método de punto interior, sino una matriz de Gram entre restricciones que aproxima
+su patrón de interacción algebraica.
+La densidad de esta matriz (\path{schur_gram_density}) define primero
+la matriz $G\in\mathbb{R}^{m\times m}$ mediante el producto interno de Frobenius:
 \[
     G_{ij}=\langle A_i,A_j\rangle_F.
 \]
@@ -189,7 +186,7 @@ La característica corresponde a la fracción de entradas no nulas de esta matri
 \[
     f_{14} = \frac{\mathrm{nnz}(G)}{m^2}.
 \]
-El condicionamiento logarítmico de Gram de Schur
+El condicionamiento logarítmico de esta matriz de Gram
 (\path{schur_gram_condition_log}) calcula el condicionamiento espectral de una versión
 regularizada de $G$:
 \[
@@ -226,19 +223,22 @@ padre, mientras que la mutación introduce cambios locales o estructurales. La p
 región objetivo, pero las mutaciones mantienen diversidad suficiente para evitar que la población colapse prematuramente en variantes triviales de
 una misma semilla.
 
-La función de fitness se basa en la distancia entre la posición proyectada de la instancia candidata y un punto objetivo del espacio. Sea $x$ una
-instancia candidata, $\phi(x)\in\mathbb{R}^{15}$ su vector de características normalizadas y $P\in\mathbb{R}^{2\times 15}$ la transformación lineal
+La función de fitness se basa en la distancia entre la posición proyectada de la instancia candidata y un punto objetivo del espacio. Sea $v$ una
+instancia candidata, $\phi(v)\in\mathbb{R}^{15}$ su vector de características normalizadas y $P\in\mathbb{R}^{2\times 15}$ la transformación lineal
 aprendida por la etapa PILOT. La posición de la instancia en el espacio proyectado se calcula como
 \[
-    z(x)=P\phi(x).
+    z(v)=P\phi(v).
 \]
 Si $z^\star\in\mathbb{R}^{2}$ es el punto objetivo, la aptitud se define como una función inversamente proporcional a la distancia euclidiana:
 \[
-    \mathrm{fitness}(x)=\frac{1}{\|z(x)-z^\star\|_2^2+\varepsilon},
+    F(v)=\frac{1}{d(z(v),z^\star)+\varepsilon},
+    \qquad
+    d(z(v),z^\star)=\|z(v)-z^\star\|^2,
 \]
-donde $\varepsilon>0$ evita divisiones por cero. Esta expresión sigue la formulación de Smith-Miles y Bowly, quienes plantean maximizar una función
-equivalente a minimizar la distancia al punto objetivo en el espacio de instancias \cite{smith-milesGeneratingNewTest2015}. En consecuencia, una
-instancia recibe mayor fitness mientras más cerca se encuentre de la región que se desea poblar.
+donde $\varepsilon>0$ evita divisiones por cero cuando la distancia al objetivo tiende a cero. Esta expresión sigue la formulación de Smith-Miles y
+Bowly, quienes plantean maximizar una función equivalente a minimizar la distancia al punto objetivo en el espacio de instancias
+\cite{smith-milesGeneratingNewTest2015}. En consecuencia, una instancia recibe mayor fitness mientras más cerca se encuentre de la región que se
+desea poblar.
 
 Además de la cercanía al objetivo, el motor penaliza candidatos inválidos o degenerados. Una instancia que no pueda escribirse consistentemente en
 formato SDPA sparse, que produzca features no finitas, o que viole restricciones básicas de tamaño y estructura, recibe aptitud nula y no se
@@ -279,6 +279,13 @@ reproducible y ejecutable en el entorno de experimentación.
 estructurales, la conversión y validación de instancias al formato \texttt{.dat-s}, la implementación del algoritmo
 genético y la automatización del benchmarking. Estos scripts están disponibles en el repositorio del proyecto y
 constituyen la contribución de software de este trabajo.
+
+\textbf{Asistencia con IA}. Durante el desarrollo se utilizaron herramientas de asistencia a la programación,
+en particular Claude Code y Codex de OpenAI, como apoyo para generar, revisar y reorganizar fragmentos de código
+y documentación técnica. Su uso no reemplazó la validación manual ni experimental: las modificaciones relevantes
+fueron revisadas contra la formulación matemática del problema, la estructura esperada de los archivos SDPA sparse
+y pruebas recurrentes de ejecución, importación, validación estructural de instancias y consistencia de resultados,
+especialmente en componentes críticos como extracción de características, runners de solvers y generación genética.
 
 \textbf{Sistema operativo}. El experimento se ejecutó sobre Windows 11 Pro (64 bits, x64), 
 con procesador Intel Core i7-10700 a 2.90\,GHz, 32\,GB de RAM y tarjeta gráfica NVIDIA

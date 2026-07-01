@@ -5,15 +5,19 @@
 \Require Archivo SDPA sparse $f$ con $m$ restricciones
 \Ensure  Feature: $constraint\_overlap\_density \in [0,1]$
 
-\State Para cada restricción $i \in \{1,\dots,m\}$, construir
-       $P_i \gets \{(\text{blkno}, r, c) : v_{i,\text{blkno},r,c} \neq 0\}$
-       \Comment{posiciones no nulas de $A_i$}
+\State Inicializar diccionario $D$ de posiciones no nulas a listas de restricciones
+\For{cada entrada no nula $(i,\text{blkno},r,c,v)$ del archivo, con $i\geq 1$}
+    \State $p \gets (\text{blkno},\min(r,c),\max(r,c))$
+    \State Agregar $i$ a $D[p]$
+          \Comment{$r,c$ son fila y columna dentro del bloque}
+\EndFor
 
 \State Inicializar grafo $G = (V, E)$ con $V = \{1,\dots,m\}$, $E = \emptyset$
-\For{cada par $(i, j)$ con $1 \leq i < j \leq m$}
-    \If{$P_i \cap P_j \neq \emptyset$}
+\For{cada posición $p$ en $D$}
+    \For{cada par distinto $(i,j)$ de restricciones en $D[p]$}
         \State $E \gets E \cup \{(i,j)\}$
-    \EndIf
+          \Comment{$A_i$ y $A_j$ comparten una entrada no nula}
+    \EndFor
 \EndFor
 
 \State \textbf{constraint\_overlap\_density}

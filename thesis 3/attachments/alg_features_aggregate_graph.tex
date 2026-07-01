@@ -11,9 +11,9 @@
 \State $V \gets \emptyset$, $E \gets \emptyset$
 \For{cada bloque $k \in \{1,\dots,B\}$}
     \State Agregar nodos $\{(k,1), (k,2), \dots, (k,|s_k|)\}$ a $V$
-    \For{cada entrada $(\text{matno}, k, i, j, v)$ con $i \neq j$}
+    \For{cada entrada no nula $(\text{matno}, k, i, j, v)$ con $i \neq j$}
         \State $E \gets E \cup \{(k,i),(k,j)\}$
-        \Comment{arista sin dirección, posición fuera de diagonal}
+        \Comment{$k$: bloque; $i,j$: fila/columna; $v$: coeficiente}
     \EndFor
 \EndFor
 

@@ -1,4 +1,416 @@
-\chapter*{Glosario}
-\printglossary[type=\acronymtype, title=Acrónimos]
-\printglossary[title=Términos]
+\makeglossaries
 
+% ── Siglas ──────────────────────────────────────────────────────────────────
+
+\newacronym{sdp}{SDP}{Programación Semidefinida}
+\newacronym{isa}{ISA}{Instance Space Analysis}
+\newacronym{ga}{GA}{Genetic Algorithm}
+\newacronym{cpu}{CPU}{Central Processing Unit}
+\newacronym{lmi}{LMI}{Linear Matrix Inequality}
+\newacronym{sdpa}{SDPA}{Semidefinite Programming Algorithm}
+
+% ── Programación semidefinida ────────────────────────────────────────────────
+
+\newglossaryentry{programacion-semidefinida}{
+  name={programación semidefinida},
+  sort={programacion semidefinida},
+  description={Clase de optimización convexa en la que se optimiza una función lineal sujeta a restricciones lineales y a la condición de que una matriz simétrica sea semidefinida positiva}
+}
+
+\newglossaryentry{matriz-semidefinida-positiva}{
+  name={matriz semidefinida positiva},
+  sort={matriz semidefinida positiva},
+  description={Matriz simétrica cuyos autovalores son no negativos. Equivalentemente, una matriz $X$ es semidefinida positiva si $z^\top X z \geq 0$ para todo vector $z$}
+}
+
+\newglossaryentry{cono-semidefinido-positivo}{
+  name={cono semidefinido positivo},
+  sort={cono semidefinido positivo},
+  description={Conjunto de matrices simétricas semidefinidas positivas. Es el cono convexo sobre el cual se formulan las restricciones principales de un problema SDP}
+}
+
+\newglossaryentry{desigualdad-matricial-lineal}{
+  name={desigualdad matricial lineal},
+  sort={desigualdad matricial lineal},
+  description={Restricción que exige que una matriz dependiente lineal o afínmente de las variables de decisión sea semidefinida positiva; corresponde a lo que se abrevia como \acrshort{lmi}}
+}
+
+\newglossaryentry{problema-primal}{
+  name={problema primal},
+  sort={problema primal},
+  description={Formulación original de un problema de optimización. En SDP, usualmente corresponde al problema donde la variable principal es una matriz semidefinida positiva $X$}
+}
+
+\newglossaryentry{problema-dual}{
+  name={problema dual},
+  sort={problema dual},
+  description={Problema asociado al primal mediante teoría de dualidad. En SDP, suele formularse en términos de variables duales y una restricción de semidefinitud positiva sobre una expresión matricial afín}
+}
+
+\newglossaryentry{gap}{
+  name={\textit{gap}},
+  sort={gap},
+  description={Diferencia entre el valor objetivo primal y el valor objetivo dual. Se utiliza como medida de cercanía a la optimalidad}
+}
+
+\newglossaryentry{factibilidad-primal}{
+  name={factibilidad primal},
+  sort={factibilidad primal},
+  description={Condición de que una solución cumpla las restricciones del problema primal}
+}
+
+\newglossaryentry{factibilidad-dual}{
+  name={factibilidad dual},
+  sort={factibilidad dual},
+  description={Condición de que una solución cumpla las restricciones del problema dual}
+}
+
+% ── Solvers y métodos numéricos ──────────────────────────────────────────────
+
+\newglossaryentry{metodo-punto-interior}{
+  name={método de punto interior},
+  sort={metodo de punto interior},
+  description={Familia de algoritmos de optimización que resuelve problemas convexos generando iterados dentro de la región factible o cerca de ella, acercándose progresivamente a la solución óptima}
+}
+
+\newglossaryentry{metodo-primal-dual}{
+  name={método primal-dual},
+  sort={metodo primal-dual},
+  description={Método que trabaja simultáneamente con variables del problema primal y del problema dual, buscando satisfacer factibilidad primal, factibilidad dual y optimalidad}
+}
+
+\newglossaryentry{escalamiento-dual}{
+  name={escalamiento dual},
+  sort={escalamiento dual},
+  description={Estrategia algorítmica que trabaja principalmente sobre el problema dual, buscando reducir costos de memoria o cómputo frente a métodos primal-dual completos}
+}
+
+\newglossaryentry{lagrangiano-aumentado}{
+  name={lagrangiano aumentado},
+  sort={lagrangiano aumentado},
+  description={Técnica de optimización que incorpora las restricciones del problema dentro de la función objetivo mediante multiplicadores de Lagrange y términos de penalización}
+}
+
+\newglossaryentry{newton-cg}{
+  name={\textit{Newton-CG}},
+  sort={Newton-CG},
+  description={Método que combina pasos tipo Newton con el método de gradientes conjugados. Se usa para resolver subproblemas grandes sin formar o factorizar completamente ciertos sistemas lineales}
+}
+
+\newglossaryentry{sistema-schur}{
+  name={sistema de Schur},
+  sort={sistema de Schur},
+  description={Sistema lineal asociado a las restricciones del problema que aparece frecuentemente en métodos de punto interior. Su tamaño, densidad y condicionamiento pueden influir fuertemente en el costo computacional del solver}
+}
+
+\newglossaryentry{condicionamiento}{
+  name={condicionamiento},
+  sort={condicionamiento},
+  description={Medida de sensibilidad numérica de un sistema o matriz. Un problema mal condicionado puede producir soluciones menos estables o requerir más esfuerzo computacional}
+}
+
+% ── Representación de instancias ─────────────────────────────────────────────
+
+\newglossaryentry{sdpa-formato}{
+  name={formato SDPA},
+  sort={formato SDPA},
+  description={Formato estándar para representar instancias de programación semidefinida, asociado a la familia de herramientas \acrshort{sdpa}}
+}
+
+\newglossaryentry{sdpa-sparse}{
+  name={\textit{SDPA sparse}},
+  sort={SDPA sparse},
+  description={Formato disperso para representar instancias SDP. Almacena solo las entradas no nulas de las matrices del problema, lo que reduce tamaño de archivo y facilita el procesamiento de instancias grandes o dispersas}
+}
+
+\newglossaryentry{dat-s}{
+  name={archivo \texttt{.dat-s}},
+  sort={archivo dat-s},
+  description={Extensión usada habitualmente para archivos en formato SDPA sparse. En este trabajo corresponde al formato canónico de entrada para las instancias SDP}
+}
+
+\newglossaryentry{bloque-semidefinido}{
+  name={bloque semidefinido},
+  sort={bloque semidefinido},
+  description={Submatriz dentro de la variable SDP que debe satisfacer una restricción de semidefinitud positiva. La estructura por bloques permite representar problemas grandes de forma más organizada}
+}
+
+\newglossaryentry{entrada-no-nula}{
+  name={entrada no nula},
+  sort={entrada no nula},
+  description={Elemento de una matriz cuyo valor es distinto de cero. En formatos dispersos, solo estas entradas se almacenan explícitamente}
+}
+
+% ── Features estructurales ───────────────────────────────────────────────────
+
+\newglossaryentry{grafo-agregado}{
+  name={grafo agregado},
+  sort={grafo agregado},
+  description={Grafo construido a partir del patrón de no nulidad de las matrices de una instancia SDP. Sus vértices representan posiciones dentro de bloques y sus aristas representan acoplamientos inducidos por entradas no nulas}
+}
+
+\newglossaryentry{densidad-grafo-agregado}{
+  name={densidad del grafo agregado},
+  sort={densidad del grafo agregado},
+  description={Proporción de aristas presentes en el grafo agregado respecto del número máximo posible de aristas. Resume el grado de conectividad estructural de una instancia}
+}
+
+\newglossaryentry{componente-conexa}{
+  name={componente conexa},
+  sort={componente conexa},
+  description={Subconjunto de vértices de un grafo en el que existe un camino entre cualquier par de vértices. Se usa para caracterizar la estructura del grafo agregado}
+}
+
+\newglossaryentry{chordalidad}{
+  name={chordalidad},
+  sort={chordalidad},
+  description={Propiedad de un grafo en la que todo ciclo de longitud mayor o igual a cuatro posee una cuerda. Es relevante porque ciertas estructuras chordales pueden explotarse para reducir costos computacionales en SDP}
+}
+
+\newglossaryentry{treewidth}{
+  name={\textit{treewidth}},
+  sort={treewidth},
+  description={Medida de qué tan parecido es un grafo a un árbol. Un \textit{treewidth} bajo suele indicar una estructura más explotable computacionalmente}
+}
+
+\newglossaryentry{clique}{
+  name={\textit{clique}},
+  sort={clique},
+  description={Subconjunto de vértices de un grafo en el que todos los pares de vértices están conectados entre sí}
+}
+
+\newglossaryentry{matriz-gram}{
+  name={matriz de Gram},
+  sort={matriz de Gram},
+  description={Matriz construida a partir de productos internos entre restricciones. En este trabajo aproxima el grado de interacción algebraica entre las matrices $A_i$ de una instancia SDP}
+}
+
+\newglossaryentry{densidad-solapamiento}{
+  name={densidad de solapamiento},
+  sort={densidad de solapamiento},
+  description={Medida que indica qué tan frecuentemente distintas restricciones comparten posiciones no nulas. Puede asociarse a mayor acoplamiento entre restricciones y mayor costo computacional}
+}
+
+% ── ISA y MATILDA ────────────────────────────────────────────────────────────
+
+\newglossaryentry{instance-space-analysis}{
+  name={\textit{Instance Space Analysis}},
+  sort={Instance Space Analysis},
+  description={Metodología para analizar algoritmos a partir de las características observables de las instancias. Permite visualizar regiones donde distintos algoritmos presentan buen o mal desempeño}
+}
+
+\newglossaryentry{matilda}{
+  name={\textit{MATILDA}},
+  sort={MATILDA},
+  description={Herramienta computacional que implementa las etapas de Instance Space Analysis, incluyendo preprocesamiento, selección de features, proyección, clasificación y análisis de footprints}
+}
+
+\newglossaryentry{buildis}{
+  name={\textit{buildIS}},
+  sort={buildIS},
+  description={Procedimiento de MATILDA/ISA usado para construir el espacio de instancias a partir de la metadata base}
+}
+
+\newglossaryentry{exploreis}{
+  name={\textit{exploreIS}},
+  sort={exploreIS},
+  description={Procedimiento de MATILDA/ISA usado para proyectar nuevas instancias sobre un espacio de instancias previamente construido}
+}
+
+\newglossaryentry{prelim}{
+  name={\textit{PRELIM}},
+  sort={PRELIM},
+  description={Etapa de ISA encargada de preparar y normalizar la metadata antes del análisis}
+}
+
+\newglossaryentry{sifted}{
+  name={\textit{SIFTED}},
+  sort={SIFTED},
+  description={Etapa de ISA encargada de seleccionar features informativas y reducir redundancias entre características}
+}
+
+\newglossaryentry{pilot}{
+  name={\textit{PILOT}},
+  sort={PILOT},
+  description={Etapa de ISA que construye la proyección bidimensional del espacio de instancias}
+}
+
+\newglossaryentry{pythia}{
+  name={\textit{PYTHIA}},
+  sort={PYTHIA},
+  description={Etapa de ISA orientada a entrenar modelos predictivos para estimar el desempeño de algoritmos en distintas regiones del espacio}
+}
+
+\newglossaryentry{trace}{
+  name={\textit{TRACE}},
+  sort={TRACE},
+  description={Etapa de ISA usada para construir y analizar footprints de desempeño de los algoritmos}
+}
+
+\newglossaryentry{cloister}{
+  name={\textit{CLOISTER}},
+  sort={CLOISTER},
+  description={Etapa de ISA que estima los límites o fronteras del espacio de instancias considerando restricciones y correlaciones entre features}
+}
+
+% ── Algoritmos genéticos ─────────────────────────────────────────────────────
+
+\newglossaryentry{algoritmo-genetico}{
+  name={algoritmo genético},
+  sort={algoritmo genetico},
+  description={Método de búsqueda inspirado en procesos evolutivos. Opera sobre una población de soluciones candidatas y aplica selección, cruzamiento y mutación para mejorar una función de aptitud}
+}
+
+\newglossaryentry{individuo}{
+  name={individuo},
+  sort={individuo},
+  description={Solución candidata dentro de una población evolutiva. En este trabajo, un individuo corresponde a una instancia SDP candidata}
+}
+
+\newglossaryentry{poblacion}{
+  name={población},
+  sort={poblacion},
+  description={Conjunto de individuos evaluados en una generación del algoritmo genético}
+}
+
+\newglossaryentry{fitness}{
+  name={\textit{fitness}},
+  sort={fitness},
+  description={Función de aptitud que mide qué tan buena es una solución candidata respecto de un objetivo. En este trabajo, se relaciona con la distancia entre una instancia generada y un punto objetivo del espacio ISA}
+}
+
+\newglossaryentry{mutacion}{
+  name={mutación},
+  sort={mutacion},
+  description={Operador evolutivo que modifica aleatoriamente una instancia candidata, por ejemplo alterando coeficientes, entradas no nulas, restricciones o bloques}
+}
+
+\newglossaryentry{cruzamiento}{
+  name={cruzamiento},
+  sort={cruzamiento},
+  description={Operador evolutivo que combina información de dos individuos padres para generar una nueva instancia candidata}
+}
+
+\newglossaryentry{elitismo}{
+  name={elitismo},
+  sort={elitismo},
+  description={Estrategia evolutiva que conserva automáticamente los mejores individuos de una generación para la siguiente}
+}
+
+\newglossaryentry{retargeting}{
+  name={\textit{retargeting}},
+  sort={retargeting},
+  description={Proceso de cambiar dinámicamente el punto o región objetivo hacia donde se dirige la evolución de instancias}
+}
+
+\newglossaryentry{region-vacia}{
+  name={región vacía},
+  sort={region vacia},
+  description={Zona del espacio de instancias con baja o nula presencia de instancias observadas. En este trabajo se usa como objetivo para generar nuevas instancias sintéticas}
+}
+
+% ── Implementación ───────────────────────────────────────────────────────────
+
+\newglossaryentry{runner}{
+  name={\textit{runner}},
+  sort={runner},
+  description={Script o módulo encargado de ejecutar un solver específico, capturar sus salidas y transformarlas a un formato común para el pipeline}
+}
+
+\newglossaryentry{orquestador}{
+  name={orquestador},
+  sort={orquestador},
+  description={Componente que coordina la ejecución de varias etapas del pipeline, por ejemplo benchmarking, extracción de features o generación de metadata}
+}
+
+\newglossaryentry{metadata-prueba}{
+  name={metadata de prueba},
+  sort={metadata de prueba},
+  description={Archivo de datos usado para proyectar nuevas instancias mediante \textit{exploreIS} sin reconstruir el espacio base generado por \textit{buildIS}}
+}
+
+% ── Términos generales ───────────────────────────────────────────────────────
+
+\newglossaryentry{solver}{
+  name={\textit{solver}},
+  sort={solver},
+  description={Programa o algoritmo especializado en resolver una clase de problemas de optimización}
+}
+
+\newglossaryentry{benchmark}{
+  name={\textit{benchmark}},
+  sort={benchmark},
+  description={Conjunto de instancias o pruebas usado como referencia para comparar el desempeño de algoritmos o sistemas}
+}
+
+\newglossaryentry{benchmarking}{
+  name={\textit{benchmarking}},
+  sort={benchmarking},
+  description={Proceso de evaluación comparativa del desempeño de algoritmos o sistemas usando benchmarks y métricas definidas}
+}
+
+\newglossaryentry{feature}{
+  name={\textit{feature}},
+  sort={feature},
+  description={Característica cuantificable de una instancia que resume una propiedad estructural o numérica relevante para el análisis}
+}
+
+\newglossaryentry{metadata}{
+  name={\textit{metadata}},
+  sort={metadata},
+  description={Datos descriptivos que organizan información sobre las instancias, sus características y los resultados asociados}
+}
+
+\newglossaryentry{sparsity}{
+  name={\textit{sparsity}},
+  sort={sparsity},
+  description={Grado de dispersión de una matriz o estructura, asociado a la proporción de entradas nulas o no nulas}
+}
+
+\newglossaryentry{sparse}{
+  name={\textit{sparse}},
+  sort={sparse},
+  description={Representación dispersa que almacena explícitamente solo los elementos relevantes o no nulos de una estructura}
+}
+
+\newglossaryentry{problema-disperso}{
+  name={problema disperso},
+  sort={problema disperso},
+  description={Problema cuya formulación contiene matrices o estructuras con una alta proporción de entradas nulas, lo que permite representaciones compactas pero puede influir en memoria, tiempo de cómputo y estabilidad numérica}
+}
+
+\newglossaryentry{frobenius}{
+  name={producto interno de Frobenius},
+  sort={producto interno de Frobenius},
+  description={Operación que asocia dos matrices reales del mismo tamaño mediante la suma de los productos de sus entradas correspondientes; para matrices $A$ y $X$, se escribe como $\langle A,X\rangle=\sum_{i,j}A_{ij}X_{ij}$, y en matrices simétricas equivale a $\mathrm{tr}(AX)$}
+}
+
+\newglossaryentry{framework}{
+  name={\textit{framework}},
+  sort={framework},
+  description={Marco metodológico o computacional que organiza un conjunto de herramientas, procedimientos y criterios de análisis}
+}
+
+\newglossaryentry{pipeline}{
+  name={\textit{pipeline}},
+  sort={pipeline},
+  description={Flujo de procesamiento compuesto por etapas encadenadas, donde la salida de una etapa alimenta a la siguiente}
+}
+
+\newglossaryentry{footprint}{
+  name={\textit{footprint}},
+  sort={footprint},
+  description={Región del espacio de instancias donde un algoritmo presenta desempeño superior según un criterio de evaluación}
+}
+
+\newglossaryentry{worstcase}{
+  name={\textit{worst-case scenario}},
+  sort={worst-case scenario},
+  description={Análisis del comportamiento de un algoritmo bajo las condiciones más desfavorables consideradas}
+}
+
+\newcommand{\printthesisglossary}{%
+  \glsaddall
+  \renewcommand*{\glossaryentrynumbers}[1]{}
+  \printglossary[type=main, title=Glosario, nonumberlist]
+}

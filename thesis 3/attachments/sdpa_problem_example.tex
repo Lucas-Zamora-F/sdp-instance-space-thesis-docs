@@ -1,0 +1,48 @@
+\begin{table}[H]
+\centering
+\caption{Problema SDP asociado al ejemplo en formato SDPA.}
+\label{tab:sdpa_problem_example}
+\begin{minipage}{0.9\textwidth}
+\[
+\begin{aligned}
+(\mathcal{P})\quad
+\min_{x\in\mathbb{R}^3}\quad
+& 48x_1 - 8x_2 + 20x_3 \\
+\text{sujeto a}\quad
+& x_1
+\begin{bmatrix}
+10 & 4 \\
+4 & 0
+\end{bmatrix}
+ + x_2
+\begin{bmatrix}
+0 & 0 \\
+0 & -8
+\end{bmatrix}
+ + x_3
+\begin{bmatrix}
+0 & -8 \\
+-8 & -2
+\end{bmatrix}
+ -
+\begin{bmatrix}
+-11 & 0 \\
+0 & 23
+\end{bmatrix}
+\succeq 0.
+\end{aligned}
+\]
+
+Equivalentemente, la restricción matricial puede escribirse como
+\[
+\begin{bmatrix}
+10x_1 + 11 & 4x_1 - 8x_3 \\
+4x_1 - 8x_3 & -8x_2 - 2x_3 - 23
+\end{bmatrix}
+\succeq 0.
+\]
+\end{minipage}
+
+\vspace{0.15cm}
+{\footnotesize Fuente: adaptado de la documentación de SDPA para Python~\cite{SDPAFormat}.}
+\end{table}

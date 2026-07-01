@@ -9,11 +9,11 @@
 
 La \acrfull{sdp} es una clase de optimización convexa en la que se optimiza una función
 lineal sujeta a restricciones lineales y a una restricción de semidefinitud positiva sobre
-una matriz simétrica. En términos generales, extiende la programación lineal al reemplazar
-la condición de no negatividad de un vector por la pertenencia de una matriz al cono de
-matrices semidefinidas positivas. Esta generalización permite modelar problemas donde la
-variable de decisión no es solo un vector, sino una matriz cuyas propiedades espectrales
-deben cumplir ciertas condiciones.
+una matriz simétrica \cite{vandenbergheSemidefiniteProgramming1996}. En términos generales,
+extiende la programación lineal al reemplazar la condición de no negatividad de un vector
+por la pertenencia de una matriz al cono de matrices semidefinidas positivas. Esta generalización
+permite modelar problemas donde la variable de decisión no es solo un vector, sino una matriz
+cuyas propiedades espectrales deben cumplir ciertas condiciones.
 
 Sea $\mathbb{S}^n$ el espacio de matrices simétricas reales de orden $n$. Una matriz
 $X\in\mathbb{S}^n$ es semidefinida positiva si
@@ -24,7 +24,11 @@ lo que se denota por $X\succeq 0$. El conjunto
 \[
     \mathbb{S}_+^n=\{X\in\mathbb{S}^n: X\succeq 0\}
 \]
-forma un cono convexo. Esta convexidad es central: aunque la restricción $X\succeq 0$ es
+forma un cono convexo, donde según la formulación de optimización cónica presentada por
+Glineur~\cite{glineurConicOptimizationElegant2001}, un conjunto $K$ es un cono convexo si,
+para todo $x,y\in K$ y para todo $\alpha,\beta\geq 0$, se cumple que
+$\alpha x+\beta y\in K$. En otras palabras, el conjunto es cerrado bajo combinaciones
+cónicas no negativas. Esta convexidad es central: aunque la restricción $X\succeq 0$ es
 no lineal en el sentido de que impone condiciones sobre los autovalores de $X$, el conjunto
 factible resultante sigue siendo convexo.
 
@@ -50,28 +54,49 @@ El problema dual asociado puede escribirse como
     \text{sujeto a}\quad & C-\sum_{i=1}^{m} y_i A_i \succeq 0.
 \end{aligned}
 \]
-La restricción dual exige que una combinación afín de matrices simétricas sea semidefinida
-positiva. Esta condición se conoce como una desigualdad matricial lineal o \textit{linear
-matrix inequality} (LMI). Por ello, muchos problemas formulados mediante LMIs pueden verse
-directamente como programas semidefinidos.
+En la formulación dual estándar de un programa semidefinido, la restricción de factibilidad
+exige que una expresión afín en las variables duales, dada por una combinación lineal de matrices
+simétricas más un término constante, pertenezca al cono de matrices semidefinidas positivas.
+Es decir, debe cumplirse una condición de la forma
+
+\[
+C - \sum_{i=1}^{m} y_i A_i \succeq 0.
+\]
+
+Este tipo de restricción se conoce como una desigualdad matricial lineal o
+\textit{linear matrix inequality} (LMI), ya que impone semidefinitud positiva sobre una matriz
+cuyos elementos dependen afínmente de las variables de decisión. En consecuencia,
+muchos problemas formulados mediante LMIs pueden interpretarse directamente como programas
+semidefinidos \cite{vandenbergheSemidefiniteProgramming1996,boydLinearMatrixInequalities1994}.
+
 
 La programación semidefinida incluye como casos particulares a la programación lineal y a
-ciertas formas de programación cuadrática convexa. En programación lineal, la restricción
-de no negatividad $x\geq 0$ puede interpretarse como la pertenencia de una matriz diagonal
-$\mathrm{diag}(x)$ al cono $\mathbb{S}_+^n$. En \acrshort{sdp}, esta idea se amplía al permitir
-matrices completas o por bloques, lo que hace posible capturar interacciones entre variables
-mediante términos fuera de la diagonal. Esta capacidad explica su relevancia en áreas como
-control robusto, optimización combinatoria, diseño estructural y relajaciones convexas de
-problemas no convexos.
+ciertas formas de programación cuadrática convexa. Para ver la relación con programación
+lineal, considérese un vector $x\in\mathbb{R}^n$. La restricción de no negatividad
+$x\geq 0$ equivale a exigir que la matriz diagonal $\mathrm{diag}(x)$ sea semidefinida
+positiva, ya que los autovalores de una matriz diagonal son precisamente sus entradas
+diagonales. Por lo tanto,
+\[
+    x\geq 0 \quad \Longleftrightarrow \quad \mathrm{diag}(x)\succeq 0.
+\]
+De esta forma, un problema lineal puede verse como un caso particular de \acrshort{sdp}
+en el que la variable matricial se restringe a ser diagonal. En \acrshort{sdp}, esta idea
+se amplía al permitir matrices completas o por bloques, lo que hace posible capturar
+interacciones entre variables mediante términos fuera de la diagonal. Esta capacidad
+explica su relevancia en áreas como control robusto, optimización combinatoria, diseño
+estructural y relajaciones convexas de problemas no convexos
+\cite{vandenbergheSemidefiniteProgramming1996,faresROBUSTCONTROLSEQUENTIAL2002,borchersSDPLIB12Library1999}.
 
-Según la descripción clásica de Vandenberghe y Boyd, un programa semidefinido minimiza una
-función lineal bajo la condición de que una combinación afín de matrices simétricas sea
-semidefinida positiva; aunque esta restricción es no lineal y no suave, preserva la
-convexidad del problema~\cite{vandenbergheSemidefiniteProgramming1996}. Esta combinación de
-expresividad y estructura convexa ha permitido extender a \acrshort{sdp} muchas ideas
-algorítmicas desarrolladas originalmente para programación lineal, en particular los métodos
-de punto interior primal-dual.
+Desde esta perspectiva, la diferencia esencial respecto de la programación lineal no está
+en abandonar la convexidad, sino en reemplazar restricciones de no negatividad sobre
+vectores por restricciones de semidefinitud positiva sobre matrices. Aunque esta restricción
+es no lineal y no suave, el conjunto factible conserva estructura convexa
+\cite{vandenbergheSemidefiniteProgramming1996}. Esta combinación de expresividad y
+convexidad ha permitido extender a \acrshort{sdp} muchas ideas algorítmicas desarrolladas
+originalmente para programación lineal, en particular los métodos de punto interior
+primal-dual.
 
+\newpage
 \subsection{Solvers para programación semidefinida}
 \label{sec:solvers_sdp}
 
@@ -82,29 +107,29 @@ mal condicionados. Por ello, la literatura y el software especializado han explo
 familias algorítmicas, cada una con ventajas y limitaciones según el tamaño, la densidad y la
 estructura de la instancia.
 
-\subsubsection{Familias algorítmicas}
-\label{subsec:familias_algoritmicas_sdp}
-
 La familia más clásica corresponde a los métodos de punto interior primal-dual. Estos métodos
 generalizan ideas de programación lineal al cono semidefinido positivo y construyen una secuencia
 de iterados que se aproximan simultáneamente a la factibilidad primal, factibilidad dual y
 optimalidad. Su fortaleza principal es la robustez numérica y la buena precisión en instancias
 pequeñas y medianas. Sin embargo, cada iteración suele requerir la formación y resolución de un
-sistema de Schur asociado a las restricciones, cuyo costo puede crecer rápidamente con el número
-de restricciones y el tamaño de los bloques semidefinidos.
+problema matricial asociado a las restricciones, cuyo costo puede crecer rápidamente con el número
+de restricciones y el tamaño de los bloques semidefinidos
+\cite{vandenbergheSemidefiniteProgramming1996}.
 
 Una segunda familia corresponde a los métodos de escalamiento dual. Estos métodos trabajan
 principalmente desde el problema dual y buscan reducir los requerimientos de memoria frente a
 ciertas variantes primal-dual completas. En lugar de construir iterados primal y dual con el mismo
 nivel de detalle, explotan la estructura dual para obtener pasos más económicos en problemas
-donde el sistema asociado sería demasiado costoso.
+donde el sistema asociado sería demasiado costoso
+\cite{bensonAlgorithm875DSDP5software2008}.
 
 Una tercera línea corresponde a los métodos de Lagrangiano aumentado y Newton-CG. Estos
 métodos son especialmente relevantes para instancias de mayor escala, donde formar y factorizar
 sistemas densos puede ser prohibitivo. Su idea general es resolver una secuencia de subproblemas
 regularizados, usando pasos de Newton aproximados o métodos iterativos. En comparación con
 los métodos de punto interior, suelen sacrificar parte de la precisión de alta tolerancia a cambio
-de una mejor escalabilidad en problemas grandes.
+de una mejor escalabilidad en problemas grandes
+\cite{sunSDPNALMatlabSoftware2019}.
 
 La coexistencia de estas familias muestra que no existe un solver universalmente dominante. Un
 método puede ser competitivo en instancias pequeñas y densas, mientras otro puede destacar en
@@ -112,6 +137,7 @@ problemas dispersos, con muchas restricciones o con bloques grandes. Esta variab
 análisis del desempeño de los solvers en función de las características de cada
 instancia.
 
+\newpage
 \subsubsection{SDPT3}
 \label{subsec:solver_sdpt3}
 
@@ -153,7 +179,7 @@ semidefinidos mediante métodos de punto interior. Su diseño enfatiza portabili
 biblioteca o ejecutable externo, lo que permite integrarlo en flujos de benchmarking sin depender
 de entornos interactivos. En estudios comparativos, CSDP suele servir como una línea base
 robusta para evaluar comportamiento de solvers de propósito general en \acrshort{sdp}
-\cite{borchersCSDPLibrarySemide}.
+\cite{borchersCSDPLibrarySemidefinite1999}.
 
 \subsubsection{DSDP}
 \label{subsec:solver_dsdp}
@@ -162,7 +188,7 @@ DSDP fue desarrollado por Steven J. Benson, con contribuciones asociadas a Yinyu
 Zhang en la literatura del solver. Es un ejemplo representativo de los métodos de escalamiento
 dual: fue diseñado para resolver problemas semidefinidos y desigualdades matriciales lineales
 usando una estrategia de escalamiento dual, con énfasis en eficiencia y bajo consumo de memoria
-\cite{bensonDSDP5SoftwareSemidefinite,bensonDSDP5UserGuide2006a}.
+\cite{bensonAlgorithm875DSDP5software2008}.
 
 \subsubsection{SDPNAL+}
 \label{subsec:solver_sdpnal}
@@ -173,7 +199,9 @@ combina una formulación de Lagrangiano aumentado con pasos de Newton-CG para re
 subproblemas de gran tamaño. Estas estrategias buscan evitar algunos de los cuellos de botella
 de los métodos de punto interior, en particular la necesidad de factorizar sistemas densos de
 gran tamaño. A cambio, pueden entregar soluciones con tolerancias más moderadas o requerir
-criterios de parada distintos.
+criterios de parada distintos \cite{sunSDPNALMatlabSoftware2019}.
+
+\vspace*{2em}
 
 Esta diversidad algorítmica justifica analizar el desempeño de los solvers no solo mediante
 promedios agregados, sino en función de las propiedades de las instancias. Características como
@@ -182,7 +210,7 @@ del sistema de Schur y el grado de dispersión pueden afectar directamente el co
 operaciones dominantes de cada método. Por ello, la comparación empírica de solvers
 \acrshort{sdp} requiere considerar tanto el rendimiento observado como la estructura de las
 instancias sobre las que dicho rendimiento se mide.
-\cite{sunSDPNALMatlabSoftware2019}
+
 
 \subsection{Librerías de instancias}
 \label{subsec:librerias_instancias_sdp}
@@ -213,8 +241,8 @@ GPUs)} reúne comparaciones de distintos códigos SDP sobre problemas dispersos 
 semidefinidos, incluyendo resultados para solvers clásicos y códigos ejecutados en GPU. Esta
 colección complementa la cobertura de SDPLIB con instancias de distintas escalas y procedencias,
 y es útil para estudiar el comportamiento de solvers en problemas exigentes, especialmente
-cuando las dimensiones o la dispersión de las matrices estresan memoria, tiempo de cómputo o
-estabilidad numérica \cite{PlatoasueduFtpSparse_sdphtml}.
+cuando las dimensiones o la dispersión de las matrices aumentan los requerimientos de memoria,
+tiempo de cómputo o estabilidad numérica \cite{PlatoasueduFtpSparse_sdphtml}.
 
 \paragraph{DIMACS Library.}
 \label{subsec:benchmark_dimacs}
@@ -270,12 +298,19 @@ que resulta directa de leer y útil para ejemplos pequeños. Sin embargo, cuando
 muchos ceros, la representación densa puede crecer innecesariamente y repetir información que no
 aporta a la instancia \cite{SDPAFormat}.
 
-El siguiente ejemplo, tomado de la documentación de SDPA para Python, muestra una instancia
+El siguiente ejemplo, tomado de la documentación de SDPA para Python \cite{SDPAFormat}, muestra una instancia
 con $m=3$ variables, un único bloque de tamaño $2$ y el vector de costos
-$c=(48,-8,20)$:
+$c=(48,-8,20)$. El Cuadro~\ref{tab:sdpa_problem_example} presenta el problema SDP
+asociado a esa instancia.
+
+\input{../attachments/sdpa_problem_example}
+
+En formato SDPA denso, la misma instancia se escribe como se muestra en el
+Cuadro~\ref{tab:sdpa_format_example}.
 
 \input{../attachments/sdpa_format_example}
 
+\newpage
 \subsubsection{Formato SDPA sparse}
 \label{subsec:formato_sdpa_sparse}
 
@@ -288,9 +323,10 @@ entradas no nulas. Después del vector de costos, cada fila contiene cinco valor
 donde \texttt{matno} identifica la matriz $F_i$; \texttt{blkno} identifica el bloque; $i$ y $j$
 indican la posición dentro del bloque; y $v$ es el valor almacenado. Como las matrices son
 simétricas, no es necesario duplicar todas las entradas: la posición $(i,j)$ y $(j,i)$ representan
-la misma información \cite{SDPAFormat}..
+la misma información \cite{SDPAFormat}.
 
-La misma instancia anterior puede escribirse en formato sparse de la siguiente forma:
+La misma instancia anterior puede escribirse en formato sparse como se muestra en el
+Cuadro~\ref{tab:sdpa_sparse_format_example}.
 
 \input{../attachments/sdpa_sparse_format_example}
 
@@ -300,7 +336,7 @@ formato reduce el tamaño de los archivos, facilita la lectura automática y per
 características estructurales como densidad, patrones de no nulidad, solapamiento entre
 restricciones y propiedades de grafos inducidos por las matrices.
 
-
+\newpage
 \section{Instance Space Analysis}
 \label{sec:instance_space_analysis}
 
@@ -342,6 +378,7 @@ donde el algoritmo de sempeña bien). Por esta razón,
 completo para analizar la calidad de los benchmarks, estudiar el comportamiento relativo de
 algoritmos y orientar la generación de nuevas instancias de prueba.
 
+\newpage
 \subsection{Metodología}
 \label{subsec:isa_metodologia}
 

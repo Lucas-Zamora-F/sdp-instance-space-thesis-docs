@@ -5,6 +5,7 @@
 \usepackage[spanish]{babel}
 \usepackage{graphicx}
 \usepackage{amsmath, amssymb}
+\usepackage{xurl}
 \usepackage{hyperref}
 \usepackage{csquotes}
 \usepackage[backend=biber, style=ieee, autolang=none]{biblatex}
@@ -37,6 +38,11 @@
   urlcolor=blue,
   citecolor=blue
 }
+\setcounter{biburllcpenalty}{9000}
+\setcounter{biburlucpenalty}{9000}
+\setcounter{biburlnumpenalty}{9000}
+\setlength{\emergencystretch}{3em}
+\AtBeginBibliography{\raggedright\sloppy}
 
 % ─── Bibliography ────────────────────────────────────────────────────────────
 \addbibresource{../references.bib}
@@ -53,8 +59,4 @@
 }
 
 % ─── Glossaries & Acronyms ───────────────────────────────────────────────────
-\makeglossaries
-\newacronym{sdp}{SDP}{Programación Semidefinida}
-\newacronym{isa}{ISA}{Instance Space Analysis}
-\newacronym{ga}{GA}{Genetic Algorithm}
-\newacronym{cpu}{CPU}{Central Processing Unit}
+\input{../core/glossary}
