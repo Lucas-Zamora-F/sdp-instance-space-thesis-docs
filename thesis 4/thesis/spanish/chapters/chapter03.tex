@@ -1,0 +1,38 @@
+% cap3.tex
+\chapter{Metodología}
+\label{ch:metodo}
+
+{\color{blue} En esta sección se debe incluir el diseño experimental y la metodología general utilizados, junto con su explicación y el detalle de materiales, equipos y métodos teóricos y experimentales. Máximo 15 páginas.}
+
+\section{Ejemplo de texto}
+En esta sección describimos el proceso de recopilación de los datos necesarios para la investigación, que incluyó corpus jurídicos chilenos e internacionales, además de proyectos del Servicio de Evaluación Ambiental de Chile.
+
+Para cada modelo se crea una estructura JSON que almacena las métricas de cada época durante el ajuste fino. Esto facilita el seguimiento y análisis del rendimiento en distintos conjuntos de datos. Cada modelo y conjunto de datos tiene un archivo JSON propio. La estructura registra, entre otras, las siguientes métricas:
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{images/JSON_ft.png}
+\caption[Ejemplo de JSON creado durante el ajuste fino]{Ejemplo de JSON creado durante el ajuste fino. Fuente: elaboración propia}
+\label{fig:JSON Fine Tune Stago}
+\end{figure}
+
+\begin{itemize}
+   \item 10: número de la época de ajuste fino.
+   \item tLoss: pérdida de entrenamiento observada en la última época.
+   \item eLoss: pérdida de evaluación sobre el conjunto de validación.
+   \item Acc/Recall micro: exactitud y exhaustividad calculadas mediante promedio micro.
+   \item Recall macro: promedio de la exhaustividad de todas las clases.
+   \item F1 macro: promedio de la medida F1 de todas las clases.
+   \item Train Time: duración del entrenamiento.
+   \item Eval Time: duración de la evaluación.
+   \item Confusion Matrix (CFM): detalle de verdaderos positivos, falsos positivos, verdaderos negativos y falsos negativos por clase.
+\end{itemize}
+
+El formato JSON estructurado facilita la comparación entre épocas, modelos y conjuntos de datos. La matriz de confusión también se representa mediante un mapa de calor para mejorar su interpretación.
+
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.8]{images/Example_CM.png}
+\caption[Ejemplo de matriz de confusión]{Ejemplo de matriz de confusión. Fuente: elaboración propia}
+\label{fig:Confusion Matrix Example}
+\end{figure}

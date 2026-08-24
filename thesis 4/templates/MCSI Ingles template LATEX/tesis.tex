@@ -1,0 +1,207 @@
+\documentclass[english, 12pt]{report}
+\input{core/preambulo.tex}
+\input{core/glosario.tex}
+\usepackage[inline]{enumitem}
+\usepackage{listings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\nombreautor}{Nombre Alumno}
+\newcommand{\mes}{Mes}
+\newcommand{\anio}{Año}
+\newcommand{\titulo}{T\'itulo tesis}
+\newcommand{\nombreprofuno}{Nombre profesor gu\'ia}
+\newcommand{\nombreprofdos}{Nombre profesor co-gu\'ia (si aplica)}
+%\newcommand{\nombreproftres}{Sebastián Maldonado}
+\newcommand{\codigo}{ING-IN-XXX/XX}
+
+%%%%%%%%%%Aqui se escribe el resumen%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\dedicatoria}{
+%En esta sección se deben incluir, de ser necesario, los agradecimientos personales a familiares, colegas, etc. (Máximo 1 página)
+ }
+
+% \newcommand{\resumen}{
+% En esta sección se debe incluir un resumen de los principales aspectos desarrollados en la tesis, justificación, metodología y principales resultados. (Máximo 1 página). 
+
+% \vspace{5cm}
+
+% {\color{blue}
+
+% El siguiente documento no puede ser la copia del escrito del o los art\'{\i}culos publicados (si corresponde).
+% Estos deben ser incluidos como Ap\'endices al final de la tesis.
+
+% \vspace{1cm}
+
+% Los m\'argenes son 2.5 cm superior e inferior, y 3 cm derecha e izquierda, en todo el documento.
+
+% \vspace{1cm}
+
+% Se debe mantener el formato tipo de letra Times New Roman, tama\~no 12 e interlineado 1.5 l\'{\i}neas.
+% }
+% }
+
+\newcommand{\resumenIngles}{
+
+}
+
+
+\newcommand{\agradecimientos}{
+En esta sección, se deben incluir los agradecimientos en primer lugar a las fuentes de financiamiento de las tesis, si las hubiera y posteriormente a los académicos involucrados en el desarrollo de la investigación. (Máximo 1 página). 
+}
+\renewcommand{\baselinestretch}{1.5}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Por favor coloque todas las definiciones de simbolos a continuacion
+% y no en los archivos de capitulos. Esto evitara la  existencia de
+% multiples definiciones para las mismas palabras.
+
+\newcommand{\mydef}
+	{\stackrel{\mathrm{def}}{=}}
+\newcommand{\e}
+	{\hbox{\large{e}}}
+\newcommand{\mi}
+	{\hbox{\large{i}}}
+\newcommand{\RR}{\mathbb{R}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\label{start}
+
+% Genera las paginas de titulo, copyright, resumen,
+% agradecimientos, dedicatoria, indices,...
+
+% No es necesario modificar
+
+\input{core/primeras_paginas.tex}
+
+%%%%%%%%%%%%%%%%Ingreso de capitulos%%%%%%%%%%%%%%%%%%%%%%
+
+% espaciado similar a Word 1.5
+\spacing{1.4}
+
+\input{chapters/chapter01.tex} % Intro
+\input{chapters/chapter02.tex} % Rev. biblio
+\input{chapters/chapter03.tex} % Metodología
+\input{chapters/chapter04.tex} % Resultados
+\input{chapters/chapter05.tex} % Conclusiones
+
+\cleardoublepage
+
+\addcontentsline{toc}{chapter}{Nomenclature}
+\chapter*{Nomenclature}
+%\addcontentsline{toc}{chapter}{Nomenclatura}
+
+%\printglossary[type=\acronymtype]
+%\printglossary[title=Special Terms, toctitle=Nomenclatura]
+
+
+% OCurrante ORDER
+% FONDEF : Fund for the Promotion of Scientific and Technological Development / Fondo de Fomento al Desarrollo Científico y Tecnológico
+
+% SEA : Environmental Assessment Service / Servicio de Evaluación Ambiental
+
+% SEIA : Environmental Impact Assessment System / Sistema de Evaluación de Impacto Ambiental
+
+% DIA : Environmental Impact Declaration / Declaración de Impacto Ambiental
+
+% ANID : National Agency for Research and Development / Agencia Nacional de Investigación y Desarrollo
+
+% EIA : Study of Environmental Impact / Estudio de Impacto Ambiental
+
+% ECC : Effects, Characteristics or Circumstance / Efectos, Características o Circunstancia
+
+% OPUS : Open Parallel Corpus
+
+% BCN : Library of the National Congress of Chile / Biblioteca del Congreso Nacional de Chile
+
+% NLP : Natural Language Processing
+
+% ICSARA : Consolidated Report of Request for Clarifications, Rectifications and/or Extensions / Informe Consolidado de Solicitud de Aclaraciones, Rectificaciones y/o Ampliaciones
+
+% ICE : Consolidated Assessment Report / Informe Consolidado de Evaluación
+
+% RCA : Environmental Qualification Resolution / Resolución de Calificación Ambiental
+
+% SMA : Environmental Superintendence / Superintendencia del Medio Ambiente
+
+% RNN : Recurrent Neural Network
+
+% LSTM : Long-Short Term Memory
+
+% CNN : Convolutional Neural Network
+
+% BERT : Bidirectional Encoder Representations from Transformers
+
+% GPT : Generative Pre-trained Transformer
+
+% RoBERTa : Robustly Optimized BERT Approach
+
+% API : Application Programming Interface
+
+% MLM : Masked Language Modeling
+
+% CLM : Casual Language Modeling
+
+% CPU : Central Processing Unit
+
+% GPU : Graphics Processing Unit
+
+% TPU : Tensor Processing Unit
+
+% CFM : Confusion Matrix
+
+% GB : Gigabyte
+
+% LR : Learning Rate
+
+% DOH : Hydraulic Works Direction / Dirección de Obras Hidráulicas
+
+% SAG : Agricultural and Livestock Service / Servicio Agrícola y Ganadero
+
+% DGA : General Directorate of Water / Dirección General de Aguas
+
+% ALphabetical
+ ANID : National Agency for Research and Development / Agencia Nacional de Investigación y Desarrollo
+ 
+ API : Application Programming Interface
+ 
+ 
+
+% Ingenieros prefieren la bibliografia antes que los anexos
+
+\cleardoublepage
+
+\addcontentsline{toc}{chapter}{References}
+% {\color{blue} En esta sección de debe incluir todas las referencias utilizadas en la tesis. Se debe evitar el uso de páginas web o fuentes no formales de información. (Máximo 15 páginas)
+
+% \vspace{0.5cm}
+
+% Sobre el formato de citas, se debe usar el formato APA, esto es: ``Según datos de Fernández (1999), un 110\% de los conductores no alcanza a frenar... En otro estudio del mismo autor (Fernández, 2000) se establece... Otras investigaciones (Fernández y Vergara, 2000) concluyen además... El trabajo de Fernández et al. (2001) confirma que...''
+
+% \vspace{0.5cm}
+
+% Para mayor información consultar: \url{https://uandes.libguides.com/citasyreferencias} 
+
+\bibliographystyle{newapa}
+\bibliography{bibliografia}
+
+
+\cleardoublepage
+
+\appendix % seguido de archivos de apendices
+
+% Escribe 'Anexos' en el Indice General
+\addcontentsline{toc}{chapter}{Appendix}
+
+
+\input{attachments/anexo_a.tex}    % archivo de apendice
+
+% \input{ruta_al_Archivo/(apendice_b}    % otro archivo de apendice
+
+\label{end}
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
