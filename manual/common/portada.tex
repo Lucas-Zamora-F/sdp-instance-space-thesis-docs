@@ -1,0 +1,40 @@
+% =============================================================
+% Portada compartida del Manual Tecnico
+% Adaptada de docs/thesis 4/thesis/english/core/primeras_paginas.tex
+% Requiere que el main.tex de cada idioma defina antes:
+%   \manualtitulo, \manualsubtitulo, \manualautor, \manualfecha
+% =============================================================
+
+\pagenumbering{roman}
+\thispagestyle{empty}
+
+\begin{center}
+    \textsc{
+    \Large
+    Universidad de los Andes \\
+    Facultad de Ingenier\'ia y Ciencias Aplicadas
+    }
+
+    \vspace{1cm}
+    \includegraphics[angle=0,height=5cm]{Logo-UANDES.png}
+
+    \vspace{1cm}
+    {\Large \manualtitulo \par}
+
+    \vspace{0.5cm}
+    {\large \manualsubtitulo \par}
+
+    \vspace{1cm}
+    {\Large \manualautor \par}
+
+    \vspace{0.5cm}
+    \manualfecha
+\end{center}
+
+\cleardoublepage
+
+\tableofcontents
+\cleardoublepage
+
+\normalsize
+\pagenumbering{arabic}

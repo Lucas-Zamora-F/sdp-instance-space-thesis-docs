@@ -1,0 +1,207 @@
+\chapter{}
+\label{cap:1}
+
+Este cap\'itulo introductorio presenta la aplicaci\'on desde la perspectiva
+de su implementaci\'on: la plataforma tecnol\'ogica sobre la cual est\'a
+construida y la l\'ogica arquitect\'onica general que sigue su c\'odigo
+fuente, como base conceptual para los cap\'itulos posteriores, en los que se
+detalla cada m\'odulo funcional del sistema (gesti\'on de instancias,
+solvers, extracci\'on de caracter\'isticas, construcci\'on de metadata y
+an\'alisis del espacio de instancias).
+
+\section{Una aplicaci\'on de escritorio construida sobre Electron}
+
+La aplicaci\'on \texttt{sdp-isa-app} est\'a implementada como una
+aplicaci\'on de escritorio multiplataforma utilizando el framework
+\textbf{Electron}. Electron permite empaquetar una interfaz de usuario
+desarrollada con tecnolog\'ias web est\'andar (HTML, hojas de estilo CSS y
+TypeScript transpilado a JavaScript) como un ejecutable nativo, mediante la
+combinaci\'on de un motor de renderizado Chromium y un entorno de ejecuci\'on
+Node.js embebidos en un \'unico proceso de distribuci\'on.
+
+La totalidad del c\'odigo fuente propio de la aplicaci\'on reside en
+\texttt{app/src/}. Este c\'odigo se compila mediante el compilador de
+TypeScript (\texttt{tsc}) hacia el directorio de salida \texttt{app/dist/},
+y la aplicaci\'on resultante se ejecuta invocando el binario de Electron
+sobre dicho directorio, seg\'un los scripts de ciclo de vida definidos en
+\texttt{package.json} (\texttt{build}, \texttt{start} y \texttt{dev}).
+
+Toda arquitectura basada en Electron se estructura, por dise\~no del propio
+framework, en torno a dos categor\'ias de procesos del sistema operativo, y
+el presente proyecto respeta estrictamente esta separaci\'on:
+
+\begin{description}
+    \item[Proceso principal (\emph{main process}).] Proceso \'unico de
+    Node.js con privilegios plenos sobre el sistema operativo subyacente:
+    acceso irrestricto al sistema de archivos, capacidad de creaci\'on y
+    gesti\'on de ventanas, y capacidad de invocaci\'on de procesos externos.
+
+    \item[Procesos de renderizado (\emph{renderer processes}).] Uno o m\'as
+    procesos, cada uno asociado a una ventana de la aplicaci\'on, encargados
+    exclusivamente de la presentaci\'on de la interfaz gr\'afica. Por
+    consideraciones de seguridad, estos procesos se ejecutan con privilegios
+    deliberadamente restringidos sobre el sistema operativo y sobre las APIs
+    de Node.js.
+\end{description}
+
+\section{Los tres componentes del c\'odigo fuente: proceso principal,
+\emph{preload} y renderer}
+
+El c\'odigo TypeScript alojado en \texttt{app/src/} se organiza en tres
+componentes con responsabilidades mutuamente excluyentes y expl\'icitamente
+delimitadas:
+
+\begin{description}
+    \item[\texttt{main.ts} — proceso principal.] Constituye el punto de
+    entrada del proceso principal de Electron. Es responsable de la creaci\'on
+    de la ventana principal de la aplicaci\'on (\texttt{BrowserWindow}), de la
+    persistencia y restauraci\'on de su tama\~no y posici\'on entre sesiones
+    consecutivas, y de la exposici\'on de un conjunto acotado de operaciones
+    privilegiadas —lectura y escritura de archivos, invocaci\'on de scripts
+    de Python como subprocesos, despliegue de cuadros de di\'alogo
+    nativos— a trav\'es del mecanismo de \textbf{comunicaci\'on entre
+    procesos} (\emph{Inter-Process Communication}, IPC) provisto por
+    Electron.
+
+    \item[\texttt{preload.ts} — puente de aislamiento de contexto.] Act\'ua
+    como intermediario \'unico y controlado entre el proceso principal y la
+    interfaz de usuario. Mediante la API \texttt{contextBridge} de Electron,
+    expone bajo el objeto global \texttt{window.api} \'unicamente el
+    subconjunto m\'inimo y expl\'icito de funciones que el proceso de
+    renderizado requiere para operar —entre ellas, \texttt{runPython},
+    \texttt{readJson}, \texttt{writeJson} y \texttt{listDir}—, sin exponer en
+    ning\'un caso el m\'odulo \texttt{electron} en su totalidad ni las APIs
+    nativas de Node.js de forma directa.
+
+    \item[\texttt{renderer/} — capa de presentaci\'on.] Constituye la
+    interfaz de usuario propiamente dicha, compuesta por el documento
+    \texttt{index.html} y un conjunto de m\'odulos TypeScript organizados por
+    dominio funcional (gesti\'on de instancias, cat\'alogo de solvers,
+    ejecuci\'on de \emph{benchmarks}, extracci\'on de caracter\'isticas,
+    construcci\'on de metadata, an\'alisis del espacio de instancias, entre
+    otros). Estos m\'odulos manipulan el \emph{Document Object Model} (DOM) y
+    delegan toda interacci\'on con el sistema operativo a las funciones
+    expuestas en \texttt{window.api}.
+\end{description}
+
+Esta separaci\'on de responsabilidades no responde \'unicamente a un
+criterio organizativo, sino que constituye una decisi\'on de seguridad
+expl\'icita: la ventana principal se instancia con las opciones
+\texttt{contextIsolation: true} y \texttt{nodeIntegration: false}, en virtud
+de las cuales el c\'odigo ejecutado en el proceso de renderizado
+\textbf{carece de capacidad} para importar directamente el m\'odulo
+\texttt{electron} o m\'odulos nativos de Node.js como \texttt{fs} —
+restricci\'on reforzada adem\'as a nivel de convenci\'on de proyecto en
+\texttt{app/CONVENTIONS.md} y documentada en el Cap\'itulo~\ref{cap:2}—.
+En consecuencia, toda interacci\'on con el sistema de archivos o con
+procesos del sistema operativo debe canalizarse obligatoriamente a trav\'es
+de \texttt{preload.ts} y ejecutarse efectivamente en \texttt{main.ts}.
+
+\section{El patr\'on arquitect\'onico de comunicaci\'on entre procesos}
+
+La l\'ogica general del c\'odigo fuente sigue, de manera consistente en la
+totalidad de la aplicaci\'on, el mismo patr\'on arquitect\'onico de
+comunicaci\'on entre la capa de presentaci\'on y el sistema operativo
+subyacente:
+
+\begin{enumerate}
+    \item Un m\'odulo del proceso de renderizado invoca una funci\'on
+    expuesta en \texttt{window.api} (por ejemplo,
+    \texttt{window.api.readJson(ruta)}).
+    \item El script \texttt{preload.ts} reenv\'ia dicha invocaci\'on al
+    proceso principal mediante los mecanismos de IPC provistos por Electron
+    (\texttt{ipcRenderer.invoke} para llamadas de tipo petici\'on/respuesta,
+    o \texttt{ipcRenderer.send} para notificaciones asincr\'onicas sin
+    respuesta directa).
+    \item El proceso principal, en \texttt{main.ts}, ejecuta la operaci\'on
+    solicitada utilizando las APIs nativas de Node.js correspondientes
+    (\texttt{fs}, \texttt{path}, \texttt{child\_process}) y produce un
+    resultado o una secuencia de eventos.
+    \item El resultado se retransmite al proceso de renderizado, que
+    procede a actualizar el estado de la interfaz y, consecuentemente, el
+    DOM.
+\end{enumerate}
+
+Dentro de este patr\'on general, el c\'odigo del proyecto instancia
+consistentemente dos variantes seg\'un la naturaleza temporal de la
+operaci\'on invocada:
+
+\begin{description}
+    \item[Operaciones de petici\'on/respuesta \'unica.] Corresponden a
+    operaciones at\'omicas de corta duraci\'on, tales como
+    \texttt{read-json}, \texttt{write-json}, \texttt{list-dir},
+    \texttt{clear-dir} o \texttt{copy-file}. El proceso de renderizado emite
+    una \'unica solicitud y recibe, a vuelta de promesa, una \'unica
+    respuesta.
+
+    \item[Operaciones de ejecuci\'on prolongada con transmisi\'on continua de
+    eventos.] Ejemplificadas por el canal \texttt{run-python}: el proceso de
+    renderizado solicita la ejecuci\'on de un script de Python, el cual el
+    proceso principal instancia como subproceso del sistema operativo
+    mediante \texttt{child\_process.spawn}. A medida que dicho subproceso
+    produce salida, el proceso principal retransmite eventos discretos
+    (\texttt{python-stdout}, \texttt{python-stderr}, \texttt{python-exit})
+    hacia el proceso de renderizado, lo que habilita la presentaci\'on de una
+    bit\'acora de progreso en tiempo real dentro de la interfaz —por
+    ejemplo, durante la descarga masiva de instancias o la ejecuci\'on de un
+    \emph{benchmark} de solvers de larga duraci\'on—.
+\end{description}
+
+\section{L\'ogica general del pipeline de an\'alisis}
+
+M\'as all\'a de su implementaci\'on como aplicaci\'on Electron, el
+prop\'osito funcional del sistema consiste en orquestar un pipeline de
+an\'alisis de datos que integra tres tecnolog\'ias heterog\'eneas:
+TypeScript para la capa de interfaz, Python para la mayor\'ia de los scripts
+de procesamiento de datos, y MATLAB para determinadas etapas del an\'alisis
+del espacio de instancias. Es importante precisar que la aplicaci\'on, en
+s\'i misma, no implementa los algoritmos de an\'alisis num\'erico: su
+funci\'on es la de un panel de control que invoca, monitorea y visualiza los
+resultados de los scripts alojados en \texttt{app/scripts/}, respetando en
+todo momento la siguiente secuencia conceptual de etapas:
+
+\begin{enumerate}
+    \item \textbf{Gesti\'on de instancias.} Descarga, conversi\'on y
+    normalizaci\'on de instancias de programaci\'on semidefinida (SDP,
+    \emph{Semidefinite Programming}) hacia un formato de representaci\'on
+    com\'un.
+    \item \textbf{Solvers y \emph{benchmarking}.} Ejecuci\'on sistem\'atica
+    de distintos solvers de SDP sobre el conjunto de instancias disponible,
+    con registro de tiempos de c\'omputo y resultados num\'ericos obtenidos.
+    \item \textbf{Extracci\'on de caracter\'isticas (\emph{features}).}
+    C\'alculo, para cada instancia, de un vector de caracter\'isticas
+    num\'ericas que la describe de forma independiente del solver empleado.
+    \item \textbf{Construcci\'on de metadata.} Integraci\'on de la
+    informaci\'on de instancias, caracter\'isticas extra\'idas y resultados
+    de \emph{benchmarking} en un \'unico conjunto de datos consolidado.
+    \item \textbf{An\'alisis del espacio de instancias (\emph{Instance Space
+    Analysis}, ISA).} Proyecci\'on del conjunto de datos consolidado hacia
+    un espacio bidimensional, con el objeto de visualizar la dificultad
+    relativa de las instancias frente a los distintos solvers evaluados.
+\end{enumerate}
+
+Cada una de estas etapas cuenta con su propio subdirectorio de
+configuraci\'on bajo \texttt{app/config/}, sus propios artefactos de datos
+generados bajo \texttt{app/data/}, y sus propios scripts de procesamiento
+bajo \texttt{app/scripts/}, seg\'un la correspondencia detallada en el
+Cap\'itulo~\ref{cap:2}. El detalle funcional de cada etapa se desarrolla en
+los cap\'itulos subsiguientes del presente manual.
+
+\section{Persistencia del estado de la aplicaci\'on}
+
+En coherencia con el principio de separaci\'on de responsabilidades descrito
+en las secciones precedentes, el estado de la aplicaci\'on se persiste en
+dos ubicaciones distintas, seg\'un la naturaleza del dato involucrado:
+
+\begin{description}
+    \item[Estado a nivel de sistema operativo.] Las dimensiones y la
+    posici\'on de la ventana principal se persisten en disco a trav\'es del
+    proceso principal (\texttt{main.ts}), en un archivo
+    \texttt{window-state.json} ubicado dentro del directorio de datos de
+    usuario gestionado por Electron (\texttt{app.getPath('userData')}).
+    \item[Estado a nivel de interfaz de usuario.] La \'ultima secci\'on
+    visitada por el usuario y el estado de colapso de la barra lateral de
+    navegaci\'on se persisten mediante la API \texttt{localStorage} del
+    navegador embebido, gestionada directamente desde \texttt{renderer.ts},
+    sin intervenci\'on del proceso principal.
+\end{description}

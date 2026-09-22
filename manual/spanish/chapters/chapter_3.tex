@@ -1,0 +1,749 @@
+\chapter{}
+\label{cap:3}
+
+Este cap\'itulo documenta en detalle la primera etapa del pipeline de
+an\'alisis introducido en el Cap\'itulo~\ref{cap:1}: la \textbf{gesti\'on de
+instancias}. Se describe, de manera t\'ecnica y espec\'ifica, el conjunto de
+fuentes externas de instancias de programaci\'on semidefinida (SDP)
+configuradas en el proyecto, los scripts de Python responsables de
+descargarlas y extraerlas, la estructura de directorios en la que se
+almacenan los artefactos intermedios, y el modo en que la interfaz de
+usuario orquesta la ejecuci\'on de dichos scripts como subprocesos.
+
+\section{Estado del pipeline y alcance del cap\'itulo}
+\label{sec:cap3-alcance}
+
+El pipeline de gesti\'on de instancias fue reconstruido \'integramente
+durante el desarrollo documentado en este cap\'itulo, reemplazando una
+implementaci\'on anterior de \'unico script (\texttt{prepare.py} monol\'itico)
+por cinco scripts independientes, cada uno con responsabilidad \'unica en
+conformidad con el principio establecido en el Cap\'itulo~\ref{cap:2}:
+\textbf{descarga} (\texttt{download.py}), \textbf{limpieza}
+(\texttt{clean.py}), \textbf{extracci\'on} (\texttt{extract.py}),
+\textbf{clasificaci\'on} (\texttt{sort.py}) y \textbf{preparaci\'on}
+(\texttt{prepare.py}). Los cinco constituyen la implementaci\'on vigente y
+verificada, con sus resultados contrastados num\'ericamente contra la
+implementaci\'on de referencia original (Secci\'on~\ref{sec:cap3-converters}).
+
+La implementaci\'on anterior —el script monol\'itico \texttt{prepare.py}, sus
+conversores de formato espec\'ificos (\texttt{dat\_to\_dats.py},
+\texttt{mat\_to\_dats.py}, \texttt{dimacs\_graph\_to\_dats.py}) y los scripts
+\texttt{clean.py} y \texttt{download.py} que precedieron a los actuales— se
+conserva, \'unicamente con fines de referencia hist\'orica, en el
+subdirectorio \texttt{app/scripts/instances/old/}. De ese subdirectorio,
+\'unicamente \texttt{list\_files.py} —el script de descubrimiento de
+archivos en \'indices HTML— sigue en uso activo: la interfaz de usuario
+todav\'ia lo invoca para resolver las fuentes de tipo \texttt{index}
+(Secci\'on~\ref{sec:cap3-index}), ya que su redise\~no no formaba parte del
+alcance de este trabajo.
+
+Un matiz importante de integraci\'on: al cierre de este cap\'itulo, la
+interfaz de usuario (\texttt{renderer.ts}) orquesta \'unicamente
+\texttt{clean.py}, \texttt{download.py} y \texttt{extract.py}
+(Secci\'on~\ref{sec:cap3-ui}). Los dos scripts m\'as nuevos,
+\texttt{sort.py} y \texttt{prepare.py}, est\'an completos, probados de forma
+exhaustiva por l\'inea de comandos contra datos reales, y listos para
+integrarse a esa misma secuencia, pero dicha integraci\'on qued\'o pendiente
+como pr\'oximo paso.
+
+\section{Fuentes de instancias: \texttt{config/instances/sources.json}}
+\label{sec:cap3-sources}
+
+El cat\'alogo de fuentes externas de instancias SDP se declara de forma
+declarativa en el archivo de configuraci\'on
+\texttt{app/config/instances/sources.json}, en conformidad con la
+convenci\'on general de separaci\'on entre configuraci\'on y c\'odigo
+establecida en el Cap\'itulo~\ref{cap:2}. Cada entrada del arreglo
+\texttt{sources} describe una fuente mediante los campos \texttt{name},
+\texttt{url}, \texttt{type}, \texttt{description}, \texttt{format} y, de
+manera opcional, \texttt{verified}. El campo \texttt{type} distingue entre
+dos naturalezas de URL, que determinan el comportamiento del script de
+descarga descrito en la Secci\'on~\ref{sec:cap3-download}:
+
+\begin{description}
+    \item[\texttt{\textquotedbl archive\textquotedbl}.] La URL apunta
+    directamente a un \'unico archivo comprimido descargable (por ejemplo,
+    un \texttt{.tar.gz}).
+    \item[\texttt{\textquotedbl index\textquotedbl}.] La URL apunta a una
+    p\'agina HTML de listado de
+    directorio, dentro de la cual es necesario descubrir program\'aticamente
+    los enlaces a los archivos individuales antes de poder descargarlos.
+\end{description}
+
+La Tabla~\ref{tab:cap3-fuentes} resume las cuatro fuentes actualmente
+configuradas.
+
+\begin{table}[htbp]
+\centering
+\caption{Fuentes de instancias SDP configuradas en \texttt{sources.json}.}
+\label{tab:cap3-fuentes}
+\begin{tabular}{p{2.6cm}p{2cm}p{7.5cm}}
+\toprule
+\textbf{Fuente} & \textbf{Tipo} & \textbf{Contenido} \\
+\midrule
+SDPLIB 1.2 & \texttt{archive} & Biblioteca de referencia para SDP: control,
+dise\~no estructural, relajaciones combinatorias. Formato \texttt{dat-s}. \\
+Mittelmann Benchmarks & \texttt{index} & Instancias de escala media y
+grande mantenidas por Hans Mittelmann; requiere descubrimiento de enlaces. \\
+DIMACS Library & \texttt{archive} & Programas mixtos
+semidefinidos-cu\'adraticos-lineales del s\'eptimo desaf\'io DIMACS,
+convertidos de SeDuMi a formato SDPA. \\
+Biq Mac Library & \texttt{archive} & Instancias de programaci\'on
+cuadr\'atica binaria no restringida (BQP), convertidas a relajaciones SDP de
+tipo \emph{max-cut}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+El campo \texttt{verified}, cuando presente y verdadero, se refleja en la
+interfaz de usuario mediante una insignia \emph{``100\% working''} junto al
+nombre de la fuente (v\'ease Secci\'on~\ref{sec:cap3-ui}), indicando que la
+descarga de dicha fuente ha sido probada exitosamente de forma manual.
+
+\section{Estructura de directorios de datos de instancias}
+\label{sec:cap3-directorios}
+
+En correspondencia con la subdivisi\'on de \texttt{data/} por etapa
+conceptual descrita en el Cap\'itulo~\ref{cap:2}, los artefactos generados
+por el pipeline de gesti\'on de instancias se organizan bajo
+\texttt{app/data/instances/} en cinco subdirectorios con sem\'antica
+estrictamente diferenciada, uno por cada etapa del pipeline:
+
+\begin{description}
+    \item[\texttt{raw/}.] Cach\'e fiel de las descargas: contiene
+    exactamente los archivos obtenidos de las fuentes externas, sin
+    modificaci\'on alguna —incluyendo, cuando corresponde, el archivo
+    comprimido original (\texttt{.tar.gz}, \texttt{.zip}, entre otros)—. Cada
+    fuente ocupa su propio subdirectorio, nombrado seg\'un el nombre de la
+    fuente saneado por la funci\'on \texttt{sourceSubdir} de
+    \texttt{renderer.ts} (Secci\'on~\ref{sec:cap3-ui}). Este directorio nunca
+    es modificado por \texttt{extract.py}, lo que permite volver a ejecutar
+    la extracci\'on cuantas veces sea necesario sin requerir una nueva
+    descarga.
+    \item[\texttt{extracted/}.] Resultado de descomprimir y aplanar el
+    contenido de \texttt{raw/}, organizado en subdirectorios hom\'onimos por
+    fuente. Antes de que \texttt{sort.py} se ejecute, puede contener archivos
+    que no son instancias (generadores, \texttt{README}, entre otros); despu\'es
+    de \texttt{sort.py} (Secci\'on~\ref{sec:cap3-sort}), contiene
+    exclusivamente archivos de instancia, sin subcarpetas anidadas ni
+    archivos comprimidos.
+    \item[\texttt{generators/}.] Scripts generadores de instancias
+    (t\'ipicamente \texttt{.m} o \texttt{.py}) que algunas fuentes distribuyen
+    junto a sus datos —por ejemplo, la biblioteca DIMACS incluye funciones
+    MATLAB como \texttt{genbisect.m} para reproducir ciertas instancias
+    param\'etricamente—. \texttt{sort.py} los extrae de \texttt{extracted/} y
+    los deposita aqu\'i, en un subdirectorio hom\'onimo por fuente.
+    \item[\texttt{extras/}.] Todo archivo distribuido junto a las instancias
+    que no es ni una instancia ni un generador —documentaci\'on
+    (\texttt{README}, \texttt{FORMAT}, \texttt{CHANGELOG}), licencias, u otros
+    archivos sin extensi\'on reconocida—. Igual que \texttt{generators/}, es
+    poblado por \texttt{sort.py} y organizado por subdirectorio de fuente.
+    \item[\texttt{prepared/}.] Resultado final del pipeline: instancias
+    normalizadas al formato SDPA sparse (\texttt{.dat-s}), producidas por
+    \texttt{prepare.py} (Secci\'on~\ref{sec:cap3-prepare}) a partir de
+    \texttt{extracted/}. Es el \'unico directorio de datos referenciado
+    directamente por el resto de la aplicaci\'on, a trav\'es del cat\'alogo
+    \texttt{config/instances/catalog.json}.
+\end{description}
+
+Los cinco directorios son vaciados de forma conjunta por
+\texttt{clean.py} (Secci\'on~\ref{sec:cap3-clean}), lo que garantiza que
+nunca coexistan artefactos de una etapa posterior correspondientes a una
+descarga previa ya descartada de \texttt{raw/}.
+
+\section{El script \texttt{download.py}}
+\label{sec:cap3-download}
+
+El script \texttt{app/scripts/instances/download.py} tiene una
+responsabilidad \'unica y deliberadamente acotada: descargar un \'unico
+archivo desde una URL hacia \texttt{data/instances/raw/}, sin realizar
+ning\'un tipo de descompresi\'on ni interpretaci\'on de su contenido. Esta
+separaci\'on estricta entre descarga y extracci\'on —impuesta como decisi\'on
+de dise\~no expl\'icita durante el redise\~no del pipeline— permite que
+ambas responsabilidades puedan ser probadas, depuradas y reejecutadas de
+forma independiente.
+
+\subsection{Interfaz de l\'inea de comandos}
+
+En conformidad con las convenciones de Python descritas en el
+Cap\'itulo~\ref{cap:2}, el script se parametriza \'integramente mediante
+\texttt{argparse}:
+
+\begin{lstlisting}[language=bash]
+python download.py <url> [--subdir SUBDIR]
+\end{lstlisting}
+
+El argumento posicional \texttt{url} es obligatorio y corresponde a la
+direcci\'on del archivo a descargar. El argumento opcional \texttt{--subdir}
+especifica el subdirectorio de \texttt{raw/} en el que se guardar\'a el
+archivo; cuando se omite, el archivo se guarda directamente en la ra\'iz de
+\texttt{raw/}. El nombre de archivo local se deriva de la propia URL
+mediante la funci\'on \texttt{\_filename\_from\_url}, que toma el \'ultimo
+segmento de la ruta descartando par\'ametros de \emph{query string}.
+
+\subsection{Protocolo de progreso}
+
+Durante la descarga, efectuada mediante \texttt{urllib.request.urlretrieve},
+el script reporta el avance por \texttt{stdout} en forma de l\'ineas con el
+prefijo literal \texttt{PROGRESS}, ya sea como porcentaje
+(\texttt{PROGRESS 42.7}) cuando el servidor informa el tama\~no total del
+recurso mediante la cabecera \texttt{Content-Length}, o como kilobytes
+descargados (\texttt{PROGRESS 1024KB}) en caso contrario. Este protocolo es
+consistente con el patr\'on general de comunicaci\'on de eventos
+\texttt{python-stdout} descrito en el Cap\'itulo~\ref{cap:1}: la funci\'on
+\texttt{appendDownloadLog} de \texttt{renderer.ts} filtra expl\'icitamente
+estas l\'ineas al renderizar la bit\'acora visible, evitando saturar el
+registro con actualizaciones de porcentaje.
+
+\section{Descubrimiento de archivos en fuentes de tipo \texttt{index}}
+\label{sec:cap3-index}
+
+Cuando la fuente seleccionada declara \texttt{\textquotedbl type\textquotedbl: \textquotedbl index\textquotedbl}, la URL no
+identifica un archivo descargable sino una p\'agina de listado de
+directorio. Previo a invocar \texttt{download.py}, la interfaz de usuario
+invoca el script auxiliar
+\texttt{app/scripts/instances/old/list\_files.py}, que:
+
+\begin{enumerate}
+    \item Descarga el HTML de la p\'agina de \'indice mediante
+    \texttt{urllib.request}, identific\'andose con una cabecera
+    \texttt{User-Agent} para evitar bloqueos por parte del servidor.
+    \item Analiza el HTML con una subclase de
+    \texttt{html.parser.HTMLParser} que captura \'unicamente las etiquetas
+    \texttt{<a href=\textquotedbl...\textquotedbl>} cuyo destino termine en una extensi\'on
+    reconocida como instancia o archivo comprimido (\texttt{.dat-s},
+    \texttt{.dat-s.gz}, \texttt{.tar.gz}, \texttt{.tgz}, \texttt{.zip},
+    \texttt{.gz}), descartando enlaces de navegaci\'on relativos
+    (\texttt{?...}, \texttt{/...}).
+    \item Resuelve cada enlace relativo a una URL absoluta mediante
+    \texttt{urllib.parse.urljoin}.
+    \item Emite por \texttt{stdout} un \'unico objeto JSON con la forma
+    \texttt{\{\textquotedbl files\textquotedbl: [\{\textquotedbl name\textquotedbl: ..., \textquotedbl url\textquotedbl: ...\}, ...]\}}.
+\end{enumerate}
+
+La funci\'on \texttt{downloadIndexSource} de \texttt{renderer.ts} consume
+esta salida, filtra los archivos cuyo nombre termina en \texttt{.dat-s} o
+\texttt{.dat-s.gz}, y descarga cada uno invocando \texttt{download.py} de
+forma secuencial, actualizando la insignia de la fuente con el progreso
+\texttt{(i/N)}.
+
+\section{El script \texttt{extract.py}}
+\label{sec:cap3-extract}
+
+El script \texttt{app/scripts/instances/extract.py} constituye la segunda
+etapa del pipeline: transforma el contenido crudo de \texttt{raw/} en
+archivos de instancia planos dentro de \texttt{extracted/}. A diferencia de
+\texttt{download.py}, que opera sobre una \'unica URL por invocaci\'on, este
+script no recibe argumentos obligatorios y recorre la totalidad de
+\texttt{raw/} en una \'unica ejecuci\'on, admitiendo opcionalmente
+\texttt{--subdir} para restringir el alcance a una sola fuente.
+
+\subsection{Algoritmo de extracci\'on por fuente}
+
+Para cada subdirectorio de \texttt{raw/} (correspondiente a una fuente), la
+funci\'on \texttt{extract\_source} ejecuta la siguiente secuencia sobre el
+subdirectorio hom\'onimo de destino en \texttt{extracted/}:
+
+\begin{enumerate}
+    \item \textbf{Primera pasada.} Recorre recursivamente los archivos de
+    \texttt{raw/<fuente>/}. Todo archivo cuyo nombre finalice en una de las
+    extensiones reconocidas como archivo comprimido
+    (\texttt{.zip}, \texttt{.tar.gz}, \texttt{.tgz}, \texttt{.tar.bz2},
+    \texttt{.tar}) se extrae directamente hacia
+    \texttt{extracted/<fuente>/} mediante los m\'odulos est\'andar
+    \texttt{zipfile} o \texttt{tarfile} (este \'ultimo con el filtro de
+    seguridad \texttt{filter=\textquotedbl data\textquotedbl}, que impide la escritura de rutas
+    fuera del directorio de destino). Todo archivo que \emph{no} sea un
+    archivo comprimido se copia tal cual mediante \texttt{shutil.copy2},
+    omiti\'endose si ya existe un archivo hom\'onimo en el destino.
+    \item \textbf{Extracci\'on recursiva de archivos anidados.} Algunas
+    fuentes (como la biblioteca DIMACS) empaquetan archivos comprimidos
+    dentro de otros archivos comprimidos. Tras la primera pasada, el
+    script repite en bucle la b\'usqueda de archivos comprimidos dentro de
+    \texttt{extracted/<fuente>/}, extrayendo y eliminando cada uno
+    encontrado, hasta que no quede ninguno.
+    \item \textbf{Descompresi\'on de miembros \texttt{.gz} individuales.}
+    La funci\'on \texttt{\_gunzip\_nested\_members} recorre
+    \texttt{extracted/<fuente>/} en busca de archivos \texttt{.gz}
+    individuales —caso t\'ipico de la biblioteca DIMACS, cuyo archivo
+    \texttt{.tar.gz} contiene instancias comprimidas individualmente— y los
+    descomprime en el mismo lugar mediante el m\'odulo \texttt{gzip},
+    eliminando el archivo \texttt{.gz} original tras la conversi\'on.
+    \item \textbf{Aplanado del directorio.} La funci\'on
+    \texttt{\_flatten\_dir} mueve todo archivo ubicado en una subcarpeta de
+    \texttt{extracted/<fuente>/} hacia la ra\'iz de dicho directorio,
+    resolviendo colisiones de nombre mediante la adici\'on de un sufijo
+    num\'erico incremental (\texttt{\_1}, \texttt{\_2}, \ldots), y elimina
+    a continuaci\'on las subcarpetas que hayan quedado vac\'ias. El
+    resultado es que \texttt{extracted/<fuente>/} nunca contiene
+    estructura de directorios anidada.
+\end{enumerate}
+
+Es importante notar que \texttt{raw/<fuente>/} no se modifica en ning\'un
+momento de este proceso: los archivos comprimidos originales permanecen
+intactos, y toda operaci\'on destructiva (eliminaci\'on de archivos
+comprimidos ya extra\'idos, resoluci\'on de colisiones) ocurre
+exclusivamente dentro de \texttt{extracted/}.
+
+\section{El script \texttt{sort.py}}
+\label{sec:cap3-sort}
+
+Algunas fuentes distribuyen, junto a las instancias propiamente dichas,
+archivos adicionales de naturaleza distinta: la biblioteca DIMACS incluye
+funciones MATLAB generadoras (\texttt{genbisect.m}, \texttt{generate\_hamming.m},
+\texttt{genfap.m}, \texttt{gentorus.m}), y SDPLIB incluye documentaci\'on de
+texto plano (\texttt{README}, \texttt{FORMAT}, \texttt{CHANGELOG}). El script
+\texttt{app/scripts/instances/sort.py} clasifica el contenido de
+\texttt{extracted/} para que solo queden instancias reales en dicho
+directorio, moviendo el resto a \texttt{generators/} o \texttt{extras/}
+(Secci\'on~\ref{sec:cap3-directorios}).
+
+\subsection{Criterio de clasificaci\'on}
+
+La funci\'on \texttt{classify} punt\'ua cada archivo, en primer lugar, por
+su extensi\'on:
+
+\begin{description}
+    \item[Generador.] Extensi\'on \texttt{.m} o \texttt{.py} —c\'odigo fuente,
+    nunca datos de instancia.
+    \item[Instancia.] Extensi\'on \texttt{.dat-s}, \texttt{.dat},
+    \texttt{.mat}, \texttt{.sdpa}, \texttt{.sdp} o \texttt{.sparse}
+    —permanece en \texttt{extracted/} sin moverse.
+    \item[Extra.] Cualquier otra extensi\'on, incluyendo la ausencia de
+    extensi\'on. Este caso por omisi\'on es deliberado: captura
+    autom\'aticamente \texttt{README}, \texttt{FORMAT}, \texttt{CHANGELOG} y
+    cualquier archivo de documentaci\'on futuro sin necesidad de enumerar sus
+    nombres expl\'icitamente.
+\end{description}
+
+Esta \'ultima regla por omisi\'on tiene una excepci\'on, necesaria porque
+los grafos de max-cut de Biq Mac Library no tienen una extensi\'on
+reconocible (Secci\'on~\ref{sec:cap3-biqmac}): para archivos de esa fuente
+espec\'ifica, \texttt{classify} recurre a \texttt{looks\_like\_triplet}
+—la misma funci\'on de detecci\'on por contenido reutilizada desde
+\texttt{instance\_grouping.py} (Secci\'on~\ref{sec:cap3-grouping})— antes
+de clasificar el archivo como extra, evitando que dichos grafos terminen
+err\'oneamente en \texttt{extras/}.
+
+Para cada subdirectorio de fuente en \texttt{extracted/}, los archivos
+clasificados como generador o extra se mueven —no se copian— hacia
+\texttt{generators/<fuente>/} o \texttt{extras/<fuente>/} respectivamente,
+cre\'andose dichos subdirectorios de destino bajo demanda. El script es
+idempotente: si se ejecuta nuevamente sobre un \texttt{extracted/} ya
+clasificado, no encuentra archivos que reclasificar y no produce cambios.
+Al igual que \texttt{extract.py}, no recibe argumentos obligatorios y
+recorre la totalidad de \texttt{extracted/} en una \'unica ejecuci\'on,
+admitiendo opcionalmente \texttt{--subdir} para restringir el alcance a una
+sola fuente.
+
+\section{El script \texttt{clean.py}}
+\label{sec:cap3-clean}
+
+El script \texttt{app/scripts/instances/clean.py} restablece el pipeline de
+instancias a su estado inicial. Vac\'ia recursivamente el contenido de los
+cinco subdirectorios de datos —\texttt{raw/}, \texttt{extracted/},
+\texttt{generators/}, \texttt{extras/} y \texttt{prepared/}—, eliminando
+primero todos los archivos y, a
+continuaci\'on, todas las subcarpetas que hayan quedado vac\'ias, sin
+eliminar los propios directorios ra\'iz (que se recrean mediante
+\texttt{mkdir(parents=True, exist\_ok=True)} si no existieran). El script
+no recibe argumentos y reporta por \texttt{stdout} la cantidad total de
+archivos eliminados, seguido de una \'unica l\'inea \texttt{PROGRESS 100}
+para se\~nalizar finalizaci\'on inmediata a la interfaz de usuario.
+
+Este script se invoca opcionalmente al inicio del flujo de descarga
+descrito en la Secci\'on~\ref{sec:cap3-ui}, cuando el usuario activa el
+interruptor \emph{``limpiar antes de descargar''}, evitando as\'i que
+instancias de una fuente descartada en una sesi\'on anterior persistan
+mezcladas con las de la sesi\'on actual.
+
+\section{Conversi\'on de instancias a SDPA: \texttt{format\_converters/}}
+\label{sec:cap3-converters}
+
+Las instancias en \texttt{extracted/} pueden llegar en distintos formatos
+seg\'un su fuente: SDPLIB ya distribuye \texttt{.dat-s} (SDPA sparse); la
+biblioteca DIMACS distribuye muchas de sus instancias como archivos
+\texttt{.mat} en \textbf{formato SeDuMi} (las variables \texttt{A}, \texttt{b},
+\texttt{c}, \texttt{K} de la representaci\'on est\'andar de MATLAB para
+programas c\'onicos); y Biq Mac Library distribuye la matriz de costos de
+sus problemas combinatorios en dos formatos propios de texto plano
+(Secci\'on~\ref{sec:cap3-biqmac}). El subdirectorio
+\texttt{app/scripts/instances/format\_converters/} contiene el c\'odigo que
+traduce cada uno de estos formatos a SDPA sparse.
+
+\subsection{Conversi\'on directa SeDuMi $\to$ SDPA}
+\label{sec:cap3-sedumi-converter}
+
+Para el formato SeDuMi, la conversi\'on se implementa en dos capas: una
+implementaci\'on de referencia heredada, de terceros, y una implementaci\'on
+propia que la sustituye.
+
+\subsubsection{La implementaci\'on de referencia: \texttt{extern/}}
+
+El subdirectorio \texttt{format\_converters/extern/} contiene, sin
+modificaci\'on, dos archivos de Brian Borchers (autor de SDPLIB y de
+SDPpack) que definen la transformaci\'on matem\'atica de referencia:
+
+\begin{description}
+    \item[\texttt{writesdp.m}.] Funci\'on MATLAB que traduce un problema en
+    formato SeDuMi al formato de texto SDPpack (SQLP).
+    \item[\texttt{sqlptosdpa.c}.] Programa en C que traduce SDPpack a SDPA
+    sparse, y que —cr\'iticamente— es responsable de una transformaci\'on
+    matem\'atica no trivial: SDPA sparse no tiene un tipo de bloque nativo
+    para conos cuadr\'aticos (\emph{second-order cones}, SOC), de modo que
+    cada cono se re-expresa como un bloque semidefinido adicional en forma
+    de \textbf{matriz flecha} (\emph{arrow matrix}): para un cono de tama\~no
+    $n$, la condici\'on $x_1 \geq \|x_{2:n}\|_2$ es equivalente a que la
+    matriz $n \times n$ con $x_1$ en la diagonal, $x_j/2$ en la posici\'on
+    $(1,j)$ y ceros en el resto sea semidefinida positiva, agregando
+    restricciones de igualdad adicionales (con lado derecho cero) que fijan
+    la diagonal de dicha matriz y anulan sus entradas interiores.
+\end{description}
+
+Encadenados, \texttt{writesdp.m} y \texttt{sqlptosdpa.c} bastar\'ian para
+convertir SeDuMi a SDPA, pero requieren un archivo de texto SQLP
+intermedio por instancia y, para ejecutar \texttt{sqlptosdpa.c}, un
+compilador de C —una herramienta no requerida por ning\'un otro script del
+proyecto—. Por esa raz\'on se implement\'o \texttt{sedumi\_to\_dats.m}: la
+misma transformaci\'on matem\'atica, fusionada en un solo paso.
+
+\subsubsection{\texttt{sedumi\_to\_dats.m}: conversi\'on directa}
+
+\texttt{sedumi\_to\_dats.m} y sus cuatro funciones auxiliares
+(\texttt{sedumiBlockSizes.m}, \texttt{sedumiMatrixEntries.m},
+\texttt{sedumiConeEntries.m}, \texttt{writeSdpaSparse.m}) reimplementan
+desde cero el mismo algoritmo de \texttt{extern/}, evitando por completo el
+archivo SQLP intermedio y la dependencia de un compilador de C. Se eligi\'o
+MATLAB —y no Python ni C— porque \texttt{.mat} es su formato nativo (lectura
+sin bibliotecas externas) y porque sus operaciones dispersas
+(\texttt{find}, \texttt{accumarray}) ya est\'an implementadas en c\'odigo
+compilado equivalente en velocidad al de C, sin agregar dependencias nuevas
+al proyecto. En conformidad con el l\'imite de $100$ l\'ineas por archivo
+MATLAB (Cap\'itulo~\ref{cap:2}), la l\'ogica se reparte en cinco archivos de
+responsabilidad \'unica: normalizaci\'on de tama\~nos de bloque
+(\texttt{K.l}/\texttt{K.q}/\texttt{K.s}), extracci\'on de entradas de los
+bloques semidefinidos, construcci\'on de la representaci\'on de matriz
+flecha para los conos, y escritura del archivo \texttt{.dat-s} final.
+
+Dos decisiones de dise\~no de \texttt{sedumi\_to\_dats.m} merecen
+explicaci\'on expl\'icita porque no son evidentes a partir del c\'odigo de
+\texttt{extern/}:
+
+\begin{description}
+    \item[Ausencia de cambio de signo.] \texttt{writesdp.m} invierte el
+    signo del vector de costos (\texttt{c = -c}) porque SDPpack maximiza y
+    SeDuMi minimiza; \texttt{sqlptosdpa.c}, al escribir el archivo SDPA,
+    invierte el signo \emph{nuevamente}. Ambas inversiones se cancelan, de
+    modo que el resultado final coincide con el \texttt{c} original de
+    SeDuMi sin cambio de signo alguno —hecho que \texttt{sedumi\_to\_dats.m}
+    aprovecha para omitir la inversi\'on por completo, ya que SDPA y SeDuMi
+    comparten la misma convenci\'on ($\min c^\top x \text{ s.a. } Ax=b$).
+    \item[Extracci\'on de bloques sparse-nativa.] \texttt{writesdp.m}
+    reconstruye cada bloque semidef\'inido como una matriz densa
+    ($\mathtt{reshape}$) por cada restricci\'on, uno a la vez. Para un bloque
+    grande y disperso —el archivo \texttt{bm1.mat} de DIMACS tiene un
+    \'unico bloque de $882\times882$ con $883$ restricciones— materializar
+    esa reconstrucci\'on densamente exigir\'ia varios gigabytes de memoria.
+    \texttt{sedumiMatrixEntries.m} evita esto por completo: usa
+    \texttt{find} directamente sobre la submatriz dispersa para obtener solo
+    las entradas no nulas, agrup\'andolas por posici\'on sim\'etrica
+    ($(i,j)$/$(j,i)$) mediante \texttt{accumarray} en lugar de reconstruir
+    la matriz completa.
+\end{description}
+
+\subsubsection{L\'imite de tama\~no para conos individuales}
+
+La representaci\'on de matriz flecha de un cono de tama\~no $n$ requiere
+$(n-2)(n-1)/2$ restricciones adicionales para anular sus entradas
+interiores —cuadr\'atico en $n$, id\'entico en \texttt{extern/} y en
+\texttt{sedumi\_to\_dats.m}—. Para la mayor\'ia de las instancias esto es
+manejable, pero algunas instancias DIMACS de la familia \texttt{sched}
+tienen un \'unico cono de tama\~no superior a $17\,000$, lo que requerir\'ia
+generar del orden de $1.6\times10^8$ restricciones —un archivo \texttt{.dat-s}
+de varios gigabytes, impr\'actico para los solvers del proyecto—.
+\texttt{sedumiConeEntries.m} calcula este conteo \emph{antes} de intentar
+construir dichas restricciones y, si excede un l\'imite de seguridad
+($5\times10^6$), aborta la conversi\'on de esa instancia con un mensaje
+explicando la causa, en lugar de agotar la memoria del sistema intent\'andolo.
+Este l\'imite descarta dos instancias del cat\'alogo DIMACS
+(\texttt{sched\_200\_100\_orig}, \texttt{sched\_200\_100\_scaled}) y reduce a
+un caso manejable otras cuatro (\texttt{sched\_100\_100\_*},
+\texttt{sched\_100\_50\_*}), seg\'un se reporta en la
+Secci\'on~\ref{sec:cap3-prepare}.
+
+\subsubsection{Validaci\'on num\'erica}
+
+La correcci\'on de \texttt{sedumi\_to\_dats.m} se verific\'o comparando su
+salida, entrada por entrada, contra la de \texttt{extern/writesdp.m} +
+\texttt{sqlptosdpa.c} compilado, para instancias representativas de cada
+combinaci\'on de tipos de bloque —solo SDP (\texttt{bm1.mat}, bloque \'unico
+de $882\times882$), muchos conos peque\~nos (\texttt{nb.mat}, $793$ conos de
+tama\~no $3$) y la combinaci\'on completa L+Q+S (\texttt{filtinf1.mat})—,
+con coincidencia exacta salvo por la numeraci\'on de las filas de
+restricciones extra (irrelevante para SDPA, que no exige un orden
+particular). El mismo procedimiento se emple\'o para medir el desempe\~no:
+sobre \texttt{nql60old.mat} ($3\,600$ conos de tama\~no $3$),
+\texttt{sedumi\_to\_dats.m} tarda $0.46\,\mathrm{s}$ frente a
+$2.39\,\mathrm{s}$ del camino de dos etapas —aproximadamente $5\times$ m\'as
+r\'apido, principalmente porque \texttt{sqlptosdpa.c} realiza dos pasadas de
+lectura car\'acter por car\'acter sobre el archivo de texto intermedio.
+
+\subsection{\texttt{biqmac\_to\_dats.py}: BQP y max-cut}
+\label{sec:cap3-biqmac}
+
+Biq Mac Library no distribuye relajaciones SDP ya construidas como SeDuMi:
+distribuye la matriz de costos $Q$ del problema combinatorio original, en
+texto plano, bajo dos formas seg\'un la familia de instancias:
+
+\begin{description}
+    \item[Programaci\'on cuadr\'atica binaria sin restricciones (UBQP).]
+    Archivos \texttt{.sparse} (y, para un subconjunto, un \texttt{.mat}
+    redundante que —pese a la extensi\'on— es tambi\'en texto plano, no un
+    binario real de MATLAB) con la matriz sim\'etrica $Q$ del problema
+    $\max x^\top Q x$, $x\in\{0,1\}^n$, en formato disperso triangular
+    superior \emph{incluyendo} la diagonal (el t\'ermino lineal).
+    \item[Grafos de max-cut ponderados.] Archivos sin extensi\'on confiable
+    —Biq Mac codifica el n\'umero de instancia como un sufijo num\'erico que
+    \texttt{pathlib} tambi\'en interpreta como extensi\'on, de modo que
+    \texttt{g05\_100.0} y \texttt{g05\_100.1} son dos instancias
+    \emph{distintas}, no dos formatos de la misma— con la lista de aristas
+    del grafo a cortar, en el mismo formato triangular superior pero
+    \emph{sin} diagonal.
+\end{description}
+
+Como ambos formatos comparten exactamente la misma forma de archivo
+(cabecera \texttt{n cuenta}, luego l\'ineas \texttt{i j valor}),
+\texttt{biqmac\_to\_dats.py} los distingue por contenido, no por extensi\'on:
+si alguna entrada tiene $i=j$, es UBQP; si ninguna, es un grafo de max-cut.
+Ambos casos exigen una transformaci\'on matem\'atica distinta hacia SDPA,
+ninguna de las cuales tiene contraparte en \texttt{extern/}:
+
+\begin{description}
+    \item[UBQP.] Se homogeneiza introduciendo una variable auxiliar $y_0=1$
+    y sustituyendo $x_i=(1+y_i)/2$, de modo que $x^\top Q x = \tfrac{1}{4}
+    y^\top \tilde{Q} y$ con $y\in\{-1,1\}^{n+1}$ y
+    $\tilde{Q}=\begin{psmallmatrix}S & r^\top\\ r & Q\end{psmallmatrix}$,
+    donde $r$ es el vector de sumas de fila de $Q$ y $S$ la suma total de
+    sus entradas. El bloque SDP resultante tiene tama\~no $n+1$, con
+    $C=-\tfrac{1}{4}\tilde{Q}$ (el signo recupera la maximizaci\'on dentro
+    de la convenci\'on de minimizaci\'on de SDPA) y $n+1$ restricciones
+    $\mathrm{diag}(Y)=e$.
+    \item[Max-cut.] No requiere variable auxiliar: el bloque SDP tiene
+    tama\~no $n$ directamente, con $C_{ij}=\tfrac{1}{4}w_{ij}$ para cada
+    arista $(i,j)$ y $n$ restricciones $\mathrm{diag}(X)=e$. Esta f\'ormula
+    se verific\'o contra \texttt{maxG11.dat-s} de SDPLIB —una instancia de
+    max-cut ya conocida como correcta, con la misma estructura de bloque
+    \'unico y coeficientes $\pm0.25$— antes de implementarla.
+\end{description}
+
+\subsubsection{Validaci\'on por consistencia num\'erica}
+
+A diferencia de \texttt{sedumi\_to\_dats.m}, para este formato no existe una
+implementaci\'on de referencia en el proyecto contra la cual comparar
+salida byte a byte. La validaci\'on se hizo, en cambio, verificando que el
+valor objetivo se preserve: para varias asignaciones binarias aleatorias
+$x$ (UBQP) o de corte $y\in\{-1,1\}^n$ (max-cut), se calcul\'o el valor
+combinatorio directamente a partir de $Q$ y se compar\'o contra $C\bullet
+Y$ evaluado sobre la matriz $C$ realmente escrita en el \texttt{.dat-s}
+generado, confirmando coincidencia exacta (salvo error de punto flotante)
+en ambos formatos y en instancias de tama\~no y peso variables.
+
+\section{El script \texttt{prepare.py}}
+\label{sec:cap3-prepare}
+
+El script \texttt{app/scripts/instances/prepare.py} constituye la \'ultima
+etapa del pipeline: normaliza el contenido de \texttt{extracted/} al
+formato SDPA sparse dentro de \texttt{prepared/}, y regenera el cat\'alogo
+\texttt{config/instances/catalog.json} que el resto de la aplicaci\'on usa
+para enumerar las instancias disponibles (Cap\'itulo~\ref{cap:2}).
+
+\subsection{Agrupaci\'on por instancia y prioridad de formato}
+\label{sec:cap3-grouping}
+
+Una misma instancia puede existir en \texttt{extracted/} en m\'as de un
+formato simult\'aneamente: la biblioteca DIMACS distribuye, para varias
+instancias, tanto un archivo \texttt{.dat} en formato de grafo (el problema
+combinatorio original) como un archivo \texttt{.mat} en formato SeDuMi (su
+relajaci\'on SDP ya construida) bajo el mismo nombre base —por ejemplo,
+\texttt{bm1.dat} y \texttt{bm1.mat}—; Biq Mac Library distribuye, para su
+familia UBQP, tanto un \texttt{.sparse} real como un \texttt{.mat}
+falsificado (texto plano, no un binario de MATLAB —
+Secci\'on~\ref{sec:cap3-biqmac}) bajo el mismo nombre base. Esta l\'ogica de
+agrupamiento y prioridad se factoriz\'o en su propio m\'odulo,
+\texttt{app/scripts/instances/instance\_grouping.py}, en lugar de vivir
+dentro de \texttt{prepare.py}, porque tambi\'en la reutiliza
+\texttt{sort.py} (Secci\'on~\ref{sec:cap3-sort}) para reconocer los grafos
+de Biq Mac que no tienen extensi\'on confiable.
+
+La funci\'on \texttt{group\_by\_stem} agrupa por nombre base
+(\texttt{Path.stem}) \'unicamente los archivos cuya extensi\'on es una de
+las tres reconocidas (\texttt{.dat-s}, \texttt{.sparse}, \texttt{.mat}); el
+resto se deja sin agrupar. Esta distinci\'on es necesaria porque agrupar
+por \texttt{Path.stem} indiscriminadamente es incorrecto para los grafos de
+Biq Mac: \texttt{pathlib} interpreta el sufijo num\'erico de instancia que
+Biq Mac usa para distinguir corridas —\texttt{g05\_100.0},
+\texttt{g05\_100.1}, \ldots— como si fuera una extensi\'on de archivo, de
+modo que agruparlos por \texttt{stem} fusionar\'ia diez instancias
+\emph{distintas} bajo un mismo grupo \texttt{g05\_100} en lugar de
+reconocerlas como diez archivos independientes.
+
+Con esa agrupaci\'on ya hecha, \texttt{plan\_source} decide, por grupo, una
+\'unica acci\'on seg\'un la prioridad siguiente:
+
+\begin{enumerate}
+    \item Si el grupo incluye un \texttt{.dat-s}, se copia directamente
+    (\texttt{shutil.copy2}) hacia \texttt{prepared/<fuente>/<nombre>.dat-s}
+    sin invocar ning\'un conversor.
+    \item En caso contrario, si el grupo incluye un \texttt{.sparse}, se
+    encola para conversi\'on v\'ia \texttt{biqmac\_to\_dats.py}
+    (Secci\'on~\ref{sec:cap3-biqmac}) —con prioridad expl\'icita sobre
+    \texttt{.mat}, para que el \texttt{.mat} falsificado de Biq Mac nunca
+    se env\'ie por error al conversor de SeDuMi.
+    \item En caso contrario, si el grupo incluye un \texttt{.mat}, se
+    encola para conversi\'on v\'ia \texttt{sedumi\_to\_dats.m}
+    (Secci\'on~\ref{sec:cap3-sedumi-converter}).
+    \item Para cada archivo que qued\'o sin agrupar (por extensi\'on no
+    reconocida): si pertenece a Biq Mac Library y su contenido calza con
+    el formato de tripletas \texttt{n cuenta} / \texttt{i j valor}
+    (\texttt{looks\_like\_triplet}), se encola tambi\'en para
+    \texttt{biqmac\_to\_dats.py}, usando el nombre de archivo completo
+    —no el \texttt{stem}— como base del \texttt{.dat-s} de salida, para
+    preservar la distinci\'on entre instancias como \texttt{g05\_100.0} y
+    \texttt{g05\_100.1}.
+    \item De lo contrario —como los archivos \texttt{.dat} de grafo DIMACS
+    que carecen de contraparte \texttt{.mat} (\texttt{biomedP},
+    \texttt{fap36}, \texttt{industry2})—, la instancia se omite y se
+    reporta por \texttt{stdout} bajo el encabezado \emph{``Skipped \ldots\
+    instance(s) with no supported format''}.
+\end{enumerate}
+
+\subsection{Una \'unica sesi\'on de MATLAB para todas las conversiones}
+
+Cada arranque de MATLAB tiene un costo fijo de varios segundos; lanzar un
+proceso de MATLAB por cada archivo \texttt{.mat} —como har\'ia invocar
+\texttt{sedumi\_to\_dats.m} una vez por instancia desde Python, seg\'un el
+patr\'on \texttt{subprocess} ya usado para \texttt{buildIS}
+(Cap\'itulo~\ref{cap:1})— multiplicar\'ia ese costo por decenas de
+instancias. En su lugar, \texttt{build\_batch\_script} genera un \'unico
+script MATLAB temporal que antepone un \texttt{addpath} hacia
+\texttt{format\_converters/} y encadena un bloque \texttt{try/catch} por
+cada conversi\'on pendiente —de modo que el fallo de una instancia (por
+ejemplo, por el l\'imite de tama\~no de cono de la
+Secci\'on~\ref{sec:cap3-converters}) no interrumpe las dem\'as—, y
+\texttt{run\_matlab\_jobs} lo ejecuta con \texttt{matlab -batch
+run('<script>')} en un \'unico proceso, transmitiendo su salida por
+\texttt{stdout} l\'inea por l\'inea igual que el resto de los scripts del
+pipeline.
+
+\subsection{Regeneraci\'on del cat\'alogo}
+
+Al finalizar la copia y las conversiones, \texttt{write\_catalog} recorre
+recursivamente \texttt{prepared/} en busca de archivos \texttt{.dat-s} y
+escribe \texttt{config/instances/catalog.json} con una entrada por
+instancia (\texttt{name}, \texttt{file}, \texttt{source}, \texttt{path}),
+reemplazando por completo el contenido anterior del archivo. Esta
+regeneraci\'on total —en lugar de una actualizaci\'on incremental— garantiza
+que el cat\'alogo jam\'as referencie una instancia que ya no existe en
+\texttt{prepared/}, a costa de exigir que \texttt{prepare.py} se ejecute
+sobre la totalidad del pipeline en cada corrida.
+
+\section{Orquestaci\'on desde la interfaz de usuario}
+\label{sec:cap3-ui}
+
+La p\'agina \emph{Instances $\to$ Download} de la interfaz, implementada en
+\texttt{app/src/renderer/renderer.ts}, no contiene l\'ogica de descarga ni
+de extracci\'on propia: su responsabilidad se limita a invocar, mediante
+\texttt{window.api.runPython} (Cap\'itulo~\ref{cap:1}), los scripts descritos
+en este cap\'itulo en la secuencia correcta, y a reflejar su progreso en la
+interfaz gr\'afica a trav\'es de tarjetas de fuente
+(\texttt{source-card}) con insignia de estado (\emph{Idle},
+\emph{Downloading}, \emph{Done}, \emph{Error}) y una bit\'acora de ejecuci\'on
+en tiempo real (\texttt{download-log}).
+
+La funci\'on \texttt{downloadSources}, invocada al presionar el bot\'on
+\emph{``Download selected''}, ejecuta la secuencia ilustrada en la
+Figura~\ref{fig:cap3-flujo}:
+
+\begin{enumerate}
+    \item Si el interruptor de limpieza est\'a activo, ejecuta
+    \texttt{clean.py} y espera su finalizaci\'on antes de continuar.
+    \item Para cada fuente seleccionada por el usuario, en orden: si la
+    fuente es de tipo \texttt{index}, delega en
+    \texttt{downloadIndexSource} (Secci\'on~\ref{sec:cap3-index}); en caso
+    contrario, invoca \texttt{download.py} una \'unica vez con la URL de la
+    fuente. El usuario puede interrumpir el proceso en cualquier momento
+    mediante el bot\'on \emph{``Stop''}, verificado entre cada fuente y entre
+    cada archivo individual de una fuente de tipo \texttt{index}.
+    \item Una vez procesadas todas las fuentes seleccionadas (o
+    interrumpido el proceso), si no hubo interrupci\'on, ejecuta
+    \texttt{extract.py} sin argumentos —una \'unica vez, sobre la totalidad
+    de \texttt{raw/}— y actualiza el indicador de estado global
+    (\texttt{pipeline-status}) a \emph{``Ready''} o \emph{``Extract
+    failed''} seg\'un el c\'odigo de salida del proceso.
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    box/.style={draw, rounded corners, align=center, minimum height=10mm,
+        minimum width=30mm, font=\small, inner sep=2mm},
+    ui/.style={box, fill=blue!8},
+    py/.style={box, fill=orange!12},
+    fs/.style={box, fill=green!10},
+    arr/.style={-{Stealth[length=2.2mm]}, thick},
+    darr/.style={-{Stealth[length=2mm]}, thick, dashed},
+    lbl/.style={font=\scriptsize, align=center, fill=white, inner sep=0.5pt},
+    stepnum/.style={lbl, font=\scriptsize\bfseries}
+]
+    % fila superior: interfaz
+    \node[ui] (ui) at (6,9.4) {renderer.ts\\\texttt{downloadSources()}};
+
+    % fila de scripts (orden de ejecucion, izquierda a derecha)
+    \node[py] (clean)    at (2,7.0) {\texttt{clean.py}};
+    \node[py] (download) at (6,7.0) {\texttt{download.py}\\\footnotesize(por fuente)};
+    \node[py] (extract)  at (10,7.0) {\texttt{extract.py}\\\footnotesize(al final)};
+
+    % script auxiliar de descubrimiento (solo fuentes tipo index)
+    \node[py] (listfiles) at (4,4.6) {\texttt{old/list\_files.py}\\\footnotesize(solo tipo \texttt{index})};
+
+    % fila de directorios de datos
+    \node[fs] (prepdir) at (2,2.2) {\texttt{data/instances/}\\\texttt{prepared/}};
+    \node[fs] (rawdir)  at (6,2.2) {\texttt{data/instances/}\\\texttt{raw/}};
+    \node[fs] (extdir)  at (10,2.2) {\texttt{data/instances/}\\\texttt{extracted/}};
+
+    % secuencia de ejecucion: 1 clean, 2 download, 3 extract
+    \draw[arr] (ui.west) -- (clean.north) node[stepnum, pos=0.65, left] {1};
+    \draw[arr] (clean.east) -- (download.west) node[stepnum, midway, above] {2};
+    \draw[arr] (download.east) -- (extract.west) node[stepnum, midway, above] {3};
+
+    % list_files.py alimenta a download.py con URLs descubiertas
+    \draw[arr] (listfiles.north) -- (download.south) node[lbl, midway] {JSON};
+
+    % escritura de resultados
+    \draw[arr] (download.south) -- (rawdir.north) node[lbl, midway] {escribe};
+    \draw[arr] (extract.south) -- (extdir.north) node[lbl, midway] {escribe};
+
+    % clean.py vacia los tres directorios de datos (bus inferior, bajo la fila de datos)
+    \draw[darr] (clean.south) -- (prepdir.north) node[lbl, midway, left] {vac\'ia};
+    \draw[darr] (clean.south) -- (2,0.5) -- (6,0.5) -- (rawdir.south);
+    \draw[darr] (clean.south) -- (2,0.15) -- (10,0.15) -- (extdir.south);
+\end{tikzpicture}
+\caption{Secuencia de invocaci\'on de los scripts del pipeline de instancias
+desde \texttt{renderer.ts} (n\'umeros 1--3 sobre las flechas superiores) y su
+efecto sobre los subdirectorios de \texttt{data/instances/}. Las flechas
+discontinuas inferiores indican el vaciado realizado por \texttt{clean.py}
+cuando el interruptor de limpieza est\'a activo.}
+\label{fig:cap3-flujo}
+\end{figure}
+
+Cada invocaci\'on a un script se realiza a trav\'es de la funci\'on auxiliar
+\texttt{runPythonCollect}, que envuelve \texttt{window.api.runPython} en
+una promesa: se suscribe a los eventos \texttt{python-stdout},
+\texttt{python-stderr} y \texttt{python-exit} descritos en el
+Cap\'itulo~\ref{cap:1}, acumula la salida completa del proceso y resuelve
+la promesa \'unicamente cuando el subproceso finaliza, entregando el
+c\'odigo de salida junto con la salida est\'andar y de error completas. Este
+patr\'on de sincronizaci\'on es lo que permite que \texttt{downloadSources}
+exprese la secuencia de m\'ultiples scripts como una funci\'on
+\texttt{async} lineal, mediante sucesivas expresiones \texttt{await}, en
+lugar de anidar callbacks.

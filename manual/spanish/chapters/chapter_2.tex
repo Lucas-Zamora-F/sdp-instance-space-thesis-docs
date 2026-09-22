@@ -1,0 +1,245 @@
+\chapter{}
+\label{cap:2}
+
+Este cap\'itulo documenta el conjunto de convenciones de ingenier\'ia de
+software que rige el desarrollo del proyecto: la organizaci\'on jer\'arquica
+de directorios dentro de \texttt{app/}, y las normas de nomenclatura
+aplicables a archivos, funciones, variables y constantes en cada uno de los
+lenguajes que componen el sistema (TypeScript, Python, MATLAB y C). Estas
+normas est\'an codificadas de manera prescriptiva en el archivo
+\texttt{app/CONVENTIONS.md}, que act\'ua como fuente de verdad; el presente
+cap\'itulo las reproduce, las contextualiza y explica la motivaci\'on de
+ingenier\'ia detr\'as de cada una, de modo que puedan aplicarse con criterio
+y no como reglas arbitrarias.
+
+\section{Principios generales de dise\~no del c\'odigo}
+
+Con independencia del lenguaje de implementaci\'on, todo el c\'odigo del
+repositorio debe adherirse a cuatro principios transversales, orientados a
+mantener la base de c\'odigo legible, verificable y f\'acil de modificar a
+medida que el proyecto crece.
+
+\begin{description}
+    \item[Principio de responsabilidad \'unica por archivo.] Cada archivo de
+    c\'odigo fuente debe encapsular una \'unica responsabilidad funcional
+    claramente delimitada. Cuando un script o m\'odulo comienza a resolver
+    m\'as de una preocupaci\'on independiente (por ejemplo, descargar datos
+    \emph{y} transformarlos \emph{y} validarlos), debe descomponerse en
+    archivos separados, cada uno responsable de una \'unica etapa. Este
+    principio favorece la capacidad de prueba unitaria, reduce el
+    acoplamiento entre componentes y facilita la localizaci\'on de defectos.
+
+    \item[L\'imites m\'aximos de extensi\'on por archivo.] Se establecen
+    l\'imites expl\'icitos de l\'ineas de c\'odigo por archivo, diferenciados
+    seg\'un el lenguaje: $150$ l\'ineas para Python, $100$ para MATLAB, $200$
+    para TypeScript y $200$ para C. Estos umbrales no son un fin en s\'i
+    mismos, sino un indicador indirecto de violaci\'on del principio de
+    responsabilidad \'unica: un archivo que excede el l\'imite es, en la
+    pr\'actica totalidad de los casos, un candidato a ser refactorizado en
+    unidades m\'as peque\~nas y cohesivas.
+
+    \item[Prohibici\'on de literales num\'ericos sin contexto sem\'antico
+    (\emph{magic numbers}).] Todo valor num\'erico que posea un significado
+    de negocio o de dominio —umbrales de decisi\'on, tama\~nos m\'aximos de
+    bloque, tiempos de espera, n\'umeros de repetici\'on, entre otros— debe
+    declararse expl\'icitamente como una constante con nombre descriptivo en
+    la cabecera del archivo correspondiente, en lugar de aparecer como un
+    literal inline dentro de la l\'ogica de negocio. Esta pr\'actica mejora
+    la trazabilidad del significado de cada valor y centraliza su
+    modificaci\'on futura en un \'unico punto del c\'odigo.
+
+    \item[Prohibici\'on de c\'odigo fuente comentado (\emph{dead code}).] No
+    se permite conservar bloques de c\'odigo inactivo delimitados por
+    comentarios como mecanismo de respaldo o referencia hist\'orica. El
+    historial de control de versiones (\texttt{git}) cumple esa funci\'on de
+    manera nativa y auditable; mantener c\'odigo comentado en el \'arbol de
+    trabajo introduce ruido visual, incrementa el costo cognitivo de lectura
+    y puede inducir a error respecto de qu\'e ruta de ejecuci\'on es la
+    vigente.
+\end{description}
+
+\section{Directorio de solo lectura: \texttt{external/}}
+
+El directorio \texttt{app/external/} tiene car\'acter de \textbf{solo
+lectura} y no debe, bajo ninguna circunstancia, ser modificado, regenerado o
+sobrescrito por c\'odigo del proyecto. Contiene los binarios ejecutables y
+las bibliotecas de terceros correspondientes a los solvers de programaci\'on
+semidefinida integrados (DSDP, CSDP, SDPA, SDPT3, SeDuMi) y a la herramienta
+externa \texttt{InstanceSpace}, distribuidos exactamente en la forma en que
+sus respectivos autores los publican.
+
+Esta restricci\'on responde a una consideraci\'on de reproducibilidad e
+integridad: los resultados num\'ericos producidos por cada solver dependen
+cr\'iticamente de la versi\'on exacta del binario empleado, por lo que
+cualquier alteraci\'on no controlada de estos artefactos comprometer\'ia la
+validez de las comparaciones de rendimiento documentadas en
+\texttt{app/data/benchmark/}. En consecuencia, todo script que necesite
+interactuar con estos componentes debe limitarse a \emph{leer} desde
+\texttt{external/}, recibiendo la ruta al binario correspondiente como
+par\'ametro de entrada (por ejemplo, a trav\'es de \texttt{argparse} en
+Python), sin generar artefactos ni archivos temporales dentro de dicho
+directorio.
+
+\section{Organizaci\'on jer\'arquica del directorio \texttt{app/}}
+
+La ubicaci\'on de cada archivo dentro del \'arbol de directorios de
+\texttt{app/} no responde a un criterio arbitrario, sino a una convenci\'on
+expl\'icita que asigna a cada categor\'ia de contenido un directorio
+can\'onico \'unico. Esta correspondencia se resume en la
+Tabla~\ref{tab:jerarquia-carpetas}.
+
+\begin{table}[htbp]
+\centering
+\caption{Correspondencia entre tipo de contenido y ubicaci\'on can\'onica
+dentro de \texttt{app/}.}
+\label{tab:jerarquia-carpetas}
+\begin{tabular}{ll}
+\toprule
+\textbf{Tipo de contenido} & \textbf{Directorio} \\
+\midrule
+Archivos de configuraci\'on en formato JSON & \texttt{config/} \\
+Instancias de programaci\'on semidefinida (\texttt{.dat-s}) & \texttt{data/} \\
+Scripts de descarga y preparaci\'on de instancias & \texttt{scripts/instances/} \\
+Scripts de extracci\'on de caracter\'isticas (\emph{features}) & \texttt{scripts/features/} \\
+Scripts de \emph{benchmarking} de solvers & \texttt{scripts/benchmark/} \\
+Scripts de algoritmos gen\'eticos & \texttt{scripts/genetic/} \\
+Funciones auxiliares de uso compartido entre m\'odulos & \texttt{scripts/utils/} \\
+Scripts exploratorios o de car\'acter desechable & \texttt{scripts/playground/} \\
+Binarios de terceros (SDPA, CSDP, DSDP, \ldots) & \texttt{external/} \\
+C\'odigo fuente de la aplicaci\'on Electron (main, preload, renderer) & \texttt{src/} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Adicionalmente, tanto \texttt{config/} como \texttt{data/} se subdividen en
+subdirectorios homónimos que reflejan las etapas conceptuales del pipeline
+de an\'alisis introducido en el Cap\'itulo~\ref{cap:1}:
+\texttt{instances/}, \texttt{solvers/}, \texttt{benchmark/},
+\texttt{features/}, \texttt{metadata/} e \texttt{isa/}. Esta simetr\'ia es
+deliberada: la configuraci\'on y los datos generados de una misma etapa del
+pipeline residen siempre bajo el mismo nombre de subdirectorio en ambas
+ramas del \'arbol, lo que permite localizar de forma inmediata, dado el
+nombre de una etapa, tanto sus par\'ametros de entrada como sus artefactos
+de salida.
+
+\section{Convenciones de nomenclatura por lenguaje}
+
+Cada lenguaje empleado en el proyecto adopta las convenciones de
+nomenclatura est\'andar de su respectivo ecosistema, con el objetivo de que
+el c\'odigo resulte idiom\'atico y familiar para desarrolladores con
+experiencia previa en dicho lenguaje.
+
+\subsection{Python}
+\begin{itemize}
+    \item Nombres de archivos y de funciones en \texttt{snake\_case} —por
+    ejemplo, \texttt{extract\_features.py} como nombre de archivo y
+    \texttt{compute\_sparsity()} como nombre de funci\'on.
+    \item Constantes declaradas en \texttt{UPPER\_SNAKE\_CASE} —por ejemplo,
+    \texttt{MAX\_BLOCK\_SIZE = 500}.
+    \item Clases declaradas en \texttt{PascalCase} —por ejemplo,
+    \texttt{InstanceParser}.
+\end{itemize}
+
+\subsection{MATLAB}
+\begin{itemize}
+    \item Nombres de archivos y de funciones en \texttt{camelCase} —por
+    ejemplo, \texttt{runSdpt3.m} como nombre de archivo y
+    \texttt{parseResult()} como nombre de funci\'on.
+    \item Constantes declaradas en \texttt{UPPER\_SNAKE\_CASE}.
+\end{itemize}
+
+\subsection{TypeScript}
+\begin{itemize}
+    \item Nombres de archivos en \texttt{camelCase} —por ejemplo,
+    \texttt{renderer.ts}.
+    \item Nombres de funciones y variables en \texttt{camelCase}.
+    \item Nombres de tipos e interfaces en \texttt{PascalCase}.
+\end{itemize}
+
+\subsection{C}
+\begin{itemize}
+    \item Nombres de archivos en \texttt{snake\_case} —por ejemplo,
+    \texttt{sdpa\_wrapper.c}.
+    \item Nombres de funciones en \texttt{snake\_case}.
+    \item Constantes y macros de preprocesador en \texttt{UPPER\_SNAKE\_CASE}.
+\end{itemize}
+
+\section{Convenciones espec\'ificas del lenguaje Python}
+
+Adem\'as de las convenciones de nomenclatura generales, todo script escrito
+en Python dentro de este proyecto debe satisfacer los siguientes requisitos
+funcionales:
+
+\begin{itemize}
+    \item \textbf{Ejecutabilidad aut\'onoma desde l\'inea de comandos.} Cada
+    script debe ser invocable de forma independiente y exponer su punto de
+    entrada mediante el idioma est\'andar
+    \texttt{if \_\_name\_\_ == "\_\_main\_\_":}, evitando dependencias
+    impl\'icitas de orquestaci\'on externas al propio script.
+    \item \textbf{Parametrizaci\'on mediante \texttt{argparse}.} Ninguna ruta
+    de archivo ni par\'ametro de configuraci\'on debe quedar codificado de
+    forma fija (\emph{hardcoded}) dentro del cuerpo del script; todos los
+    par\'ametros variables se reciben como argumentos de l\'inea de comandos
+    procesados mediante el m\'odulo \texttt{argparse} de la biblioteca
+    est\'andar.
+    \item \textbf{Separaci\'on de canales de salida.} El progreso de
+    ejecuci\'on se reporta por \texttt{stdout}, mientras que los mensajes de
+    error se reportan exclusivamente por \texttt{stderr}. Esta separaci\'on
+    no es meramente estil\'istica: es la que permite, tal como se describe en
+    el Cap\'itulo~\ref{cap:1}, que la interfaz de usuario distinga
+    program\'aticamente las l\'ineas de progreso normal de las l\'ineas de
+    error al renderizar la bit\'acora de ejecuci\'on en tiempo real mediante
+    los eventos \texttt{python-stdout} y \texttt{python-stderr}.
+    \item \textbf{Convenci\'on de c\'odigos de salida.} El proceso debe
+    finalizar con c\'odigo de salida \texttt{0} \'unicamente en caso de
+    ejecuci\'on exitosa, y con un c\'odigo distinto de cero ante cualquier
+    condici\'on de error, de manera que el proceso principal de Electron
+    (evento \texttt{python-exit}) pueda determinar program\'aticamente el
+    resultado de la ejecuci\'on sin necesidad de parsear el contenido textual
+    de la salida.
+\end{itemize}
+
+\section{Convenciones espec\'ificas del lenguaje MATLAB}
+
+\begin{itemize}
+    \item Cada archivo con extensi\'on \texttt{.m} debe exponer exactamente
+    una funci\'on p\'ublica, cuyo nombre coincide obligatoriamente con el
+    nombre del archivo que la contiene, en conformidad con el requisito del
+    int\'erprete de MATLAB.
+    \item Los resultados producidos por una funci\'on deben retornarse como
+    una \'unica estructura (\texttt{struct}) con campos nombrados,
+    prefiri\'endose expl\'icitamente esta forma por sobre el retorno de
+    m\'ultiples variables de salida posicionales, con el fin de mejorar la
+    legibilidad y la estabilidad de la interfaz de la funci\'on ante
+    futuras extensiones.
+    \item No se invoca la funci\'on \texttt{addpath} dentro de los propios
+    scripts de MATLAB: la resoluci\'on de rutas y dependencias se gestiona de
+    forma centralizada desde el proceso principal de Electron, evitando que
+    la configuraci\'on del \emph{path} de MATLAB quede dispersa entre
+    m\'ultiples archivos.
+\end{itemize}
+
+\section{Convenciones espec\'ificas del lenguaje TypeScript}
+
+\begin{itemize}
+    \item \textbf{Ausencia de estilos en l\'inea.} No se admite el uso de
+    atributos de estilo (\texttt{style="..."}) directamente en el marcado
+    HTML; toda propiedad visual se expresa mediante clases CSS definidas en
+    la hoja de estilos centralizada \texttt{styles.css}, preservando la
+    separaci\'on entre estructura y presentaci\'on.
+    \item \textbf{Confinamiento de las llamadas de comunicaci\'on entre
+    procesos.} Las invocaciones a las APIs de comunicaci\'on entre procesos
+    de Electron (\texttt{ipcMain}, \texttt{ipcRenderer}) se restringen
+    exclusivamente a los archivos \texttt{main.ts} y \texttt{preload.ts}. El
+    c\'odigo del proceso de renderizado no debe, en ning\'un caso, importar
+    el m\'odulo \texttt{electron} de forma directa, en conformidad con el
+    modelo de seguridad de aislamiento de contexto descrito en el
+    Cap\'itulo~\ref{cap:1}.
+    \item \textbf{Centralizaci\'on de cadenas de texto traducibles.} Toda
+    cadena de texto visible en la interfaz de usuario debe canalizarse a
+    trav\'es del mecanismo de internacionalizaci\'on del proyecto, basado en
+    el atributo \texttt{data-i18n} y en un diccionario de
+    \texttt{translations}; no se admite texto de interfaz codificado de
+    forma literal dentro del marcado HTML ni dentro de la l\'ogica
+    TypeScript.
+\end{itemize}
