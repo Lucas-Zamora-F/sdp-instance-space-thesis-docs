@@ -25,17 +25,12 @@ conformidad con el principio establecido en el Cap\'itulo~\ref{cap:2}:
 verificada, con sus resultados contrastados num\'ericamente contra la
 implementaci\'on de referencia original (Secci\'on~\ref{sec:cap3-converters}).
 
-La implementaci\'on anterior —el script monol\'itico \texttt{prepare.py}, sus
-conversores de formato espec\'ificos (\texttt{dat\_to\_dats.py},
-\texttt{mat\_to\_dats.py}, \texttt{dimacs\_graph\_to\_dats.py}) y los scripts
-\texttt{clean.py} y \texttt{download.py} que precedieron a los actuales— se
-conserva, \'unicamente con fines de referencia hist\'orica, en el
-subdirectorio \texttt{app/scripts/instances/old/}. De ese subdirectorio,
-\'unicamente \texttt{list\_files.py} —el script de descubrimiento de
-archivos en \'indices HTML— sigue en uso activo: la interfaz de usuario
-todav\'ia lo invoca para resolver las fuentes de tipo \texttt{index}
-(Secci\'on~\ref{sec:cap3-index}), ya que su redise\~no no formaba parte del
-alcance de este trabajo.
+Junto a ellos se encuentra \texttt{list\_files.py}, el script de
+descubrimiento de archivos en \'indices HTML, que la interfaz de usuario
+invoca para resolver las fuentes de tipo \texttt{index}
+(Secci\'on~\ref{sec:cap3-index}). Este script proviene de la implementaci\'on
+anterior y se conserv\'o sin cambios, ya que su redise\~no no formaba parte
+del alcance de este trabajo.
 
 Un matiz importante de integraci\'on: al cierre de este cap\'itulo, la
 interfaz de usuario (\texttt{renderer.ts}) orquesta \'unicamente
@@ -202,7 +197,7 @@ Cuando la fuente seleccionada declara \texttt{\textquotedbl type\textquotedbl: \
 identifica un archivo descargable sino una p\'agina de listado de
 directorio. Previo a invocar \texttt{download.py}, la interfaz de usuario
 invoca el script auxiliar
-\texttt{app/scripts/instances/old/list\_files.py}, que:
+\texttt{app/scripts/instances/list\_files.py}, que:
 
 \begin{enumerate}
     \item Descarga el HTML de la p\'agina de \'indice mediante
@@ -704,7 +699,7 @@ Figura~\ref{fig:cap3-flujo}:
     \node[py] (extract)  at (10,7.0) {\texttt{extract.py}\\\footnotesize(al final)};
 
     % script auxiliar de descubrimiento (solo fuentes tipo index)
-    \node[py] (listfiles) at (4,4.6) {\texttt{old/list\_files.py}\\\footnotesize(solo tipo \texttt{index})};
+    \node[py] (listfiles) at (4,4.6) {\texttt{list\_files.py}\\\footnotesize(solo tipo \texttt{index})};
 
     % fila de directorios de datos
     \node[fs] (prepdir) at (2,2.2) {\texttt{data/instances/}\\\texttt{prepared/}};
