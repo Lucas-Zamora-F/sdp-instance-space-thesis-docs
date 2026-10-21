@@ -17,7 +17,8 @@
 % Encoding
 
 \usepackage[utf8]{inputenc}
-\usepackage[spanish,es-nodecimaldot]{babel}
+% es-noquoting: los atajos << >> rompen el parche de biblatex-apa sobre \@makecaption
+\usepackage[spanish,es-nodecimaldot,es-noquoting]{babel}
 
 % Carga librerias utiles con simbolos y estructuras
 \usepackage{amsfonts}
@@ -49,8 +50,10 @@
 % Libreria para ajustar espaciado entre lineas
 \usepackage[doublespacing]{setspace}
 
-% Libreria con estilo APA para bibliografia
-\usepackage{core/newapa}
+% Libreria con estilo APA 7 para bibliografia (compilar con biber)
+\usepackage{csquotes}
+\usepackage[backend=biber,style=apa]{biblatex}
+\addbibresource{../../common/references.bib}
 
 % Si usted está utilizando un teclado en español, puede ser útil
 % usar los paquetes a continuacion. De otra manera tendrá que generar las
@@ -172,6 +175,8 @@
 \newcounter{dummy}
 
 \setlength{\parindent}{0cm}
+% Espacio vertical entre párrafos (compensa la falta de sangría)
+\setlength{\parskip}{0.8em plus 0.2em minus 0.1em}
 \usepackage{float}
 \usepackage{subfigure}
 \usepackage{array}

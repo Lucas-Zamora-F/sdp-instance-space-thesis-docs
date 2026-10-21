@@ -21,7 +21,7 @@
 \label{fig:RNN}
 \centering
 \includegraphics[scale=0.2]{images/RNNFNN.jpeg}
-\caption[FNN, and RNN Architectures]{FNN, and RNN Architectures, Source: \cite{maldonado2022analytics}}
+\caption[FNN, and RNN Architectures]{FNN, and RNN Architectures, Source: \parencite{maldonado2022analytics}}
 \end{figure}
 
 Another significant advancement in NLP came with the introduction of Convolutional Neural Networks (CNNs).The convolution operation is defined as follows:
@@ -55,10 +55,10 @@ Where:
 In the following subsections, we will delve into the details of pre-training and fine-tuning Transformers models, highlighting the methodologies and techniques involved, but first hyperparameters must be explained since they are relevant in both phases.
 
 \subsection{HyperParameters}
-Hyperparameters are configuration settings that determine the behavior and performance of a machine learning model \cite{Goodfellow-et-al-2016}. They are set before the training process and are not learned from the data. These parameters govern various aspects of the training process and can significantly impact the model's performance. Different models and tasks may require different hyperparameters to achieve optimal results \cite{bergstra2012random}. Some common hyperparameters include the learning rate, batch size, number of training epochs, weight decay, warm-up ratio, and max sequence length. Let's focus on two key hyperparameters: learning rate and batch size.
+Hyperparameters are configuration settings that determine the behavior and performance of a machine learning model \parencite{Goodfellow-et-al-2016}. They are set before the training process and are not learned from the data. These parameters govern various aspects of the training process and can significantly impact the model's performance. Different models and tasks may require different hyperparameters to achieve optimal results \parencite{bergstra2012random}. Some common hyperparameters include the learning rate, batch size, number of training epochs, weight decay, warm-up ratio, and max sequence length. Let's focus on two key hyperparameters: learning rate and batch size.
 
 \begin{itemize}[]
-\item The learning rate controls the step size at which the model's parameters are updated during training. A higher learning rate allows for faster convergence but may risk overshooting the optimal solution. On the other hand, a lower learning rate ensures more stable updates but might lead to slower convergence \cite{series/lncs/Bottou12}. Choosing an appropriate learning rate involves a trade-off between convergence speed and stability.
-\item The batch size refers to the number of samples used in each iteration of the training process. Larger batch sizes tend to provide smoother and more stable updates due to the averaging effect across multiple samples. However, larger batch sizes require more memory and computational resources, which can be a constraint for larger models or limited hardware. In such cases, reducing the batch size becomes necessary to fit the model into memory and maintain efficient training \cite{keskar2017largebatch}.
+\item The learning rate controls the step size at which the model's parameters are updated during training. A higher learning rate allows for faster convergence but may risk overshooting the optimal solution. On the other hand, a lower learning rate ensures more stable updates but might lead to slower convergence \parencite{series/lncs/Bottou12}. Choosing an appropriate learning rate involves a trade-off between convergence speed and stability.
+\item The batch size refers to the number of samples used in each iteration of the training process. Larger batch sizes tend to provide smoother and more stable updates due to the averaging effect across multiple samples. However, larger batch sizes require more memory and computational resources, which can be a constraint for larger models or limited hardware. In such cases, reducing the batch size becomes necessary to fit the model into memory and maintain efficient training \parencite{keskar2017largebatch}.
 \end{itemize}
 

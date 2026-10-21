@@ -2,9 +2,258 @@
 \chapter{Revisión bibliográfica}
 \label{ch:litRev}
 
-\textcolor{blue}{Esta sección presenta una revisión exhaustiva de la literatura sobre los principales temas y conceptos relevantes para esta investigación.}%Eliminar
-
-
-
 \section{Programación semidefinida}
+\label{sec:programacion_semidefinida}
 
+La \acrfull{sdp} es una clase de optimización convexa en la que se optimiza una función
+lineal sujeta a restricciones lineales y a una restricción de semidefinitud positiva sobre
+una matriz simétrica \cite{vandenbergheSemidefiniteProgramming1996}. En términos generales,
+extiende la programación lineal al reemplazar la condición de no negatividad de un vector
+por la pertenencia de una matriz al cono de matrices semidefinidas positivas. Esta generalización
+permite modelar problemas donde la variable de decisión no es solo un vector, sino una matriz
+cuyas propiedades espectrales deben cumplir ciertas condiciones.
+
+Sea $\mathbb{S}^n$ el espacio de matrices simétricas reales de orden $n$. Una matriz
+$X\in\mathbb{S}^n$ es semidefinida positiva si
+\[
+    z^\top X z \geq 0, \qquad \forall z\in\mathbb{R}^n,
+\]
+lo que se denota por $X\succeq 0$. El conjunto
+\[
+    \mathbb{S}_+^n=\{X\in\mathbb{S}^n: X\succeq 0\}
+\]
+forma un cono convexo, donde según la formulación de optimización cónica presentada por
+Glineur~\cite{glineurConicOptimizationElegant2001}, un conjunto $K$ es un cono convexo si,
+para todo $x,y\in K$ y para todo $\alpha,\beta\geq 0$, se cumple que
+$\alpha x+\beta y\in K$. En otras palabras, el conjunto es cerrado bajo combinaciones
+cónicas no negativas. Esta convexidad es central: aunque la restricción $X\succeq 0$ es
+no lineal en el sentido de que impone condiciones sobre los autovalores de $X$, el conjunto
+factible resultante sigue siendo convexo.
+
+Una forma estándar primal de un problema de programación semidefinida es
+\[
+\begin{aligned}
+    \min_{X\in\mathbb{S}^n}\quad & \langle C,X\rangle \\
+    \text{sujeto a}\quad & \langle A_i,X\rangle = b_i,
+        \qquad i=1,\ldots,m,\\
+    & X\succeq 0,
+\end{aligned}
+\]
+donde $C,A_1,\ldots,A_m\in\mathbb{S}^n$, $b\in\mathbb{R}^m$ y
+$\langle A,X\rangle=\mathrm{tr}(AX)$ corresponde al producto interno de Frobenius para
+matrices simétricas. En esta formulación, la función objetivo y las restricciones de igualdad
+son lineales en la variable matricial $X$, mientras que la restricción cónica $X\succeq 0$
+garantiza que la solución pertenezca al cono semidefinido positivo.
+
+El problema dual asociado puede escribirse como
+\[
+\begin{aligned}
+    \max_{y\in\mathbb{R}^m}\quad & b^\top y \\
+    \text{sujeto a}\quad & C-\sum_{i=1}^{m} y_i A_i \succeq 0.
+\end{aligned}
+\]
+En la formulación dual estándar de un programa semidefinido, la restricción de factibilidad
+exige que una expresión afín en las variables duales, dada por una combinación lineal de matrices
+simétricas más un término constante, pertenezca al cono de matrices semidefinidas positivas.
+Es decir, debe cumplirse una condición de la forma
+
+\[
+C - \sum_{i=1}^{m} y_i A_i \succeq 0.
+\]
+
+Este tipo de restricción se conoce como una desigualdad matricial lineal o
+\textit{linear matrix inequality} (LMI), ya que impone semidefinitud positiva sobre una matriz
+cuyos elementos dependen afínmente de las variables de decisión. En consecuencia,
+muchos problemas formulados mediante LMIs pueden interpretarse directamente como programas
+semidefinidos \cite{vandenbergheSemidefiniteProgramming1996,boydLinearMatrixInequalities1994}.
+
+
+La programación semidefinida incluye como casos particulares a la programación lineal y a
+ciertas formas de programación cuadrática convexa. Para ver la relación con programación
+lineal, considérese un vector $x\in\mathbb{R}^n$. La restricción de no negatividad
+$x\geq 0$ equivale a exigir que la matriz diagonal $\mathrm{diag}(x)$ sea semidefinida
+positiva, ya que los autovalores de una matriz diagonal son precisamente sus entradas
+diagonales. Por lo tanto,
+\[
+    x\geq 0 \quad \Longleftrightarrow \quad \mathrm{diag}(x)\succeq 0.
+\]
+De esta forma, un problema lineal puede verse como un caso particular de \acrshort{sdp}
+en el que la variable matricial se restringe a ser diagonal. En \acrshort{sdp}, esta idea
+se amplía al permitir matrices completas o por bloques, lo que hace posible capturar
+interacciones entre variables mediante términos fuera de la diagonal. Esta capacidad
+explica su relevancia en áreas como control robusto, optimización combinatoria, diseño
+estructural y relajaciones convexas de problemas no convexos
+\cite{vandenbergheSemidefiniteProgramming1996,faresROBUSTCONTROLSEQUENTIAL2002,borchersSDPLIB12Library1999}.
+
+Desde esta perspectiva, la diferencia esencial respecto de la programación lineal no está
+en abandonar la convexidad, sino en reemplazar restricciones de no negatividad sobre
+vectores por restricciones de semidefinitud positiva sobre matrices. Aunque esta restricción
+es no lineal y no suave, el conjunto factible conserva estructura convexa
+\cite{vandenbergheSemidefiniteProgramming1996}. Esta combinación de expresividad y
+convexidad ha permitido extender a \acrshort{sdp} muchas ideas algorítmicas desarrolladas
+originalmente para programación lineal, en particular los métodos de punto interior
+primal-dual.
+
+\section{Instance Space Analysis}
+\label{sec:instance_space_analysis}
+
+\acrfull{isa} es una metodología para analizar el desempeño de algoritmos a partir de las
+propiedades observables de las instancias sobre las que son evaluados. Su objetivo principal es
+superar las limitaciones del benchmarking tradicional, donde el rendimiento suele resumirse
+mediante promedios sobre una colección fija de problemas. Ese tipo de análisis puede ocultar
+que un algoritmo sea competitivo solo en ciertas regiones del dominio, o que una colección de
+instancias esté sesgada hacia problemas con estructura similar. En contraste, \acrshort{isa}
+representa cada instancia como un vector de características y construye un espacio bidimensional
+en el que se visualizan simultáneamente la diversidad de las instancias y las regiones de buen
+desempeño de cada algoritmo~\cite{smith-milesInstanceSpaceAnalysis2023}.
+
+El enfoque fue desarrollado por Kate Smith-Miles, Mario Andrés Muñoz y colaboradores como
+una extensión del problema de selección de algoritmos formulado por Rice en 1976
+\cite{riceAlgorithmSelectionProblem1976}. En dicho marco, las características de una instancia
+se utilizan para predecir qué algoritmo tendrá mejor desempeño sobre ella. La contribución de
+\acrshort{isa} consiste en ampliar esa idea hacia una representación geométrica del dominio de
+instancias: en lugar de limitarse a seleccionar un algoritmo ganador, la metodología construye un
+mapa donde se observan similitudes entre instancias, regiones de dificultad y zonas de fortaleza o
+debilidad de cada algoritmo.
+
+Smith-Miles y Muñoz sitúan el origen conceptual de \acrshort{isa} en la necesidad de evaluar
+algoritmos de manera más objetiva que mediante comparaciones promedio. Una colección de
+benchmarks puede ser ampliamente usada y, aun así, no representar de forma adecuada la
+diversidad del espacio de problemas. Si las instancias disponibles se concentran en una región
+estrecha, las conclusiones sobre el rendimiento de los algoritmos quedan condicionadas por ese
+sesgo experimental. \acrshort{isa} responde a este problema haciendo explícita la distribución de
+las instancias en el espacio de características y permitiendo identificar regiones poco cubiertas,
+instancias redundantes y zonas donde la evidencia empírica es insuficiente.
+
+La metodología ha evolucionado durante más de una década hasta consolidarse en herramientas
+como el \textit{ISA toolkit} y MATILDA (\textit{Melbourne Algorithm Test Instance Library with Data
+Analytics}). Estas herramientas automatizan la construcción del espacio de instancias, la
+selección de características relevantes, la proyección bidimensional, la estimación de fronteras,
+la predicción de desempeño y el cálculo de footprints de algoritmos (area del espacio de instancias 
+donde el algoritmo de sempeña bien). Por esta razón,
+\acrshort{isa} no debe entenderse solo como una técnica de visualización, sino como un marco
+completo para analizar la calidad de los benchmarks, estudiar el comportamiento relativo de
+algoritmos y orientar la generación de nuevas instancias de prueba.
+
+\newpage
+\subsection{Metodología}
+\label{subsec:isa_metodologia}
+
+El punto de partida de la metodología es un conjunto de instancias experimentales
+$I=\{x_1,\ldots,x_n\}$ extraídas de un espacio de problemas más amplio $P$. Para cada instancia
+$x_j$ se calcula un vector de características (features)
+\[
+    f_j = (f_{1j}, f_{2j}, \ldots, f_{mj})^\top \in \mathbb{R}^m,
+\]
+que describe propiedades estructurales o estadísticas relevantes del problema. Al mismo tiempo,
+cada instancia se evalúa con un portafolio de algoritmos
+$A=\{\alpha_1,\ldots,\alpha_a\}$, obteniendo medidas de rendimiento
+$y_{ij}$ para el algoritmo $\alpha_i$ sobre la instancia $x_j$. Con ello se forman dos matrices de
+metadatos:
+\[
+    F = [f_1,\ldots,f_n]\in\mathbb{R}^{m\times n},
+    \qquad
+    Y = [y_1,\ldots,y_n]\in\mathbb{R}^{a\times n},
+\]
+donde $F$ contiene las características de las instancias e $Y$ contiene el desempeño observado
+de los algoritmos. Esta dupla $\{F,Y\}$ constituye la entrada central del análisis.
+
+En \acrshort{isa}, no solo se busca predecir qué algoritmo conviene usar para una nueva instancia,
+sino también comprender en qué regiones del espacio cada algoritmo presenta fortalezas o
+debilidades.
+Para ello, la metodología transforma los vectores de características de alta dimensión en
+coordenadas bidimensionales
+\[
+    z_j = (z_{1j}, z_{2j})^\top \in \mathbb{R}^2,
+\]
+preservando relaciones relevantes entre características y rendimiento. El resultado es un mapa
+del espacio de instancias en el que puntos cercanos representan instancias con propiedades
+similares, y donde las variaciones de desempeño pueden interpretarse visualmente.
+
+La Figura~\ref{fig:isa_sources} muestra un ejemplo de esta representación. Cada punto
+corresponde a una instancia proyectada y el color identifica su familia de origen. Este tipo de
+visualización permite inspeccionar si las instancias disponibles cubren distintas regiones del
+espacio o si se concentran en zonas estructuralmente similares.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth]{images/isa_distribution_sources.png}
+    \caption{Ejemplo de distribución de instancias en un espacio bidimensional, separadas por
+    fuente o familia de origen.}
+    \label{fig:isa_sources}
+\end{figure}
+
+\subsection{Construcción del espacio de instancias}
+\label{subsec:isa_space_construction}
+
+La construcción del espacio de instancias se organiza en una secuencia de etapas. La primera,
+PRELIM (\textit{Preparation for Learning of Instance Meta-Data}), prepara los metadatos para el
+aprendizaje posterior. En esta etapa se define, a partir de un umbral especificado por el usuario,
+una medida binaria de buen desempeño para cada par algoritmo-instancia. Además, se aplican
+procedimientos de acotamiento y normalización para reducir el efecto de valores extremos y hacer
+comparables las escalas de las distintas características y métricas de rendimiento.
+
+La segunda etapa, SIFTED (\textit{Selection of Instance Features to Explain Difficulty}), selecciona
+un subconjunto de características informativas. La selección busca conservar variables que estén
+correlacionadas con el desempeño de los algoritmos y, al mismo tiempo, eliminar redundancias
+entre características similares. De esta forma, el espacio proyectado se construye con features que
+aportan información sobre la dificultad de las instancias y sobre las diferencias de comportamiento
+entre algoritmos.
+
+La tercera etapa, PILOT (\textit{Projecting Instances with Linearly Observable Trends}), construye
+la proyección bidimensional. A diferencia de técnicas generales de reducción de dimensionalidad,
+como PCA, PILOT no busca únicamente preservar varianza. Su objetivo es encontrar una
+transformación lineal que haga observables tendencias entre las coordenadas del espacio, las
+características seleccionadas y las métricas de rendimiento. En términos generales, si
+$\tilde f_j$ denota el vector de características seleccionado y normalizado para la instancia $x_j$,
+la proyección puede entenderse como
+\[
+    z_j = P\tilde f_j,
+\]
+donde $P$ es una matriz de proyección aprendida desde los metadatos. Esta construcción permite
+interpretar los ejes del espacio como combinaciones lineales de las características más relevantes.
+
+La cuarta etapa, CLOISTER (\textit{Correlated Limits of the Instance Space's Theoretical or
+Experimental Regions}), estima la frontera del espacio de instancias. Esta frontera no se limita al
+convex hull de las instancias observadas, sino que intenta aproximar la región factible inducida por
+los límites superiores e inferiores de las características, considerando también correlaciones entre
+ellas. La frontera cumple un rol metodológico importante: permite evaluar si el conjunto de
+instancias disponible cubre de forma diversa el espacio posible o si se concentra en una región
+estrecha, dejando zonas sin evidencia experimental.
+
+Una vez construido el espacio, la metodología incorpora modelos predictivos para selección
+automática de algoritmos. En particular, PYTHIA entrena clasificadores SVM sobre las coordenadas
+bidimensionales para predecir si un algoritmo tendrá buen desempeño en una instancia dada. Así,
+una nueva instancia puede ser caracterizada mediante sus features, proyectada al espacio
+bidimensional y asociada al algoritmo con mayor probabilidad de buen rendimiento.
+
+El análisis de fortalezas y debilidades se realiza mediante footprints de algoritmos. Un footprint
+corresponde a la región del espacio donde existe evidencia de que un algoritmo presenta buen
+desempeño o desempeño superior respecto de los demás. Smith-Miles y Muñoz proponen TRACE
+(\textit{Triangulation with Removal of Areas with Contradicting Evidence}) para construir estas
+regiones y cuantificarlas mediante métricas como área, densidad y pureza. El área aproxima la
+robustez del algoritmo en el espacio estudiado; la densidad indica cuánta evidencia empírica
+sustenta la región; y la pureza mide si existen o no observaciones contradictorias dentro del
+footprint.
+
+La Figura~\ref{fig:isa_footprint_csdp} ilustra esta idea para un algoritmo particular: las zonas
+marcadas como GOOD representan regiones del espacio donde el algoritmo cumple el criterio de
+buen desempeño, mientras que las zonas BAD muestran instancias donde dicho criterio no se
+alcanza. La forma y extensión de estas regiones permiten interpretar visualmente la cobertura y
+robustez del algoritmo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth]{images/isa_footprint_csdp.png}
+    \caption{Ejemplo de footprint de desempeño para un algoritmo en el espacio de instancias.}
+    \label{fig:isa_footprint_csdp}
+\end{figure}
+
+La metodología completa es iterativa. Un primer análisis puede revelar que las instancias
+disponibles no son suficientemente diversas, que las características no explican adecuadamente el
+rendimiento, o que el portafolio de algoritmos no permite observar diferencias claras. En esos
+casos, \acrshort{isa} recomienda enriquecer los metadatos mediante nuevas instancias, nuevas
+características o nuevos algoritmos, y repetir el proceso. Esta naturaleza iterativa convierte a
+\acrshort{isa} no solo en una técnica de visualización, sino en una herramienta para diseñar
+benchmarks más informativos y para realizar pruebas de algoritmos más objetivas y
+estructuradas~\cite{smith-milesInstanceSpaceAnalysis2023}.

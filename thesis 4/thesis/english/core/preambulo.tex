@@ -48,8 +48,10 @@
 % Libreria para ajustar espaciado entre lineas
 \usepackage[doublespacing]{setspace}
 
-% Libreria con estilo APA para bibliografia
-\usepackage{core/newapa}
+% Libreria con estilo APA 7 para bibliografia (compilar con biber)
+\usepackage{csquotes}
+\usepackage[backend=biber,style=apa]{biblatex}
+\addbibresource{../../common/references.bib}
 
 % Si usted está utilizando un teclado en español, puede ser útil
 % usar los paquetes a continuacion. De otra manera tendrá que generar las

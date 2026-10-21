@@ -2,8 +2,8 @@
   "ltex.language": "es",
   "latex-workshop.latex.recipes": [
     {
-      "name": "pdflatex → bibtex → makeglossaries → pdflatex × 2",
-      "tools": ["pdflatex", "bibtex", "makeglossaries", "pdflatex", "pdflatex"]
+      "name": "pdflatex → biber → makeglossaries → pdflatex × 2",
+      "tools": ["pdflatex", "biber", "makeglossaries", "pdflatex", "pdflatex"]
     }
   ],
   "latex-workshop.latex.tools": [
@@ -13,8 +13,8 @@
       "args": ["-interaction=nonstopmode", "-synctex=1", "%DOC%"]
     },
     {
-      "name": "bibtex",
-      "command": "bibtex",
+      "name": "biber",
+      "command": "biber",
       "args": ["%DOCFILE%"]
     },
     {
@@ -23,5 +23,5 @@
       "args": ["%DOCFILE%"]
     }
   ],
-  "latex-workshop.latex.recipe.default": "pdflatex → bibtex → makeglossaries → pdflatex × 2"
+  "latex-workshop.latex.recipe.default": "pdflatex → biber → makeglossaries → pdflatex × 2"
 }

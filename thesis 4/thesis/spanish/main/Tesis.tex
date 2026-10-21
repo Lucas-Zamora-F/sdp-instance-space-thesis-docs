@@ -4,6 +4,7 @@
 \makeatother
 \input{core/preambulo.tex}
 \input{core/glosario.tex}
+\input{core/acronimos.tex}
 \graphicspath{{../}{../../common/}}
 \usepackage[inline]{enumitem}
 \usepackage{listings}
@@ -106,91 +107,15 @@ En esta sección, se deben incluir los agradecimientos en primer lugar a las fue
 
 \cleardoublepage
 
-\addcontentsline{toc}{chapter}{Nomenclatura}
-\chapter*{Nomenclatura}
-%\addcontentsline{toc}{chapter}{Nomenclatura}
+\printglossary[type=\acronymtype, title=Nomenclatura, toctitle=Nomenclatura]
 
-%\printglossary[type=\acronymtype]
 \printglossary[title=Glosario, toctitle=Glosario]
 
-
-% OCurrante ORDER
-% FONDEF : Fund for the Promotion of Scientific and Technological Development / Fondo de Fomento al Desarrollo Científico y Tecnológico
-
-% SEA : Environmental Assessment Service / Servicio de Evaluación Ambiental
-
-% SEIA : Environmental Impact Assessment System / Sistema de Evaluación de Impacto Ambiental
-
-% DIA : Environmental Impact Declaration / Declaración de Impacto Ambiental
-
-% ANID : National Agency for Research and Development / Agencia Nacional de Investigación y Desarrollo
-
-% EIA : Study of Environmental Impact / Estudio de Impacto Ambiental
-
-% ECC : Effects, Characteristics or Circumstance / Efectos, Características o Circunstancia
-
-% OPUS : Open Parallel Corpus
-
-% BCN : Library of the National Congress of Chile / Biblioteca del Congreso Nacional de Chile
-
-% NLP : Natural Language Processing
-
-% ICSARA : Consolidated Report of Request for Clarifications, Rectifications and/or Extensions / Informe Consolidado de Solicitud de Aclaraciones, Rectificaciones y/o Ampliaciones
-
-% ICE : Consolidated Assessment Report / Informe Consolidado de Evaluación
-
-% RCA : Environmental Qualification Resolution / Resolución de Calificación Ambiental
-
-% SMA : Environmental Superintendence / Superintendencia del Medio Ambiente
-
-% RNN : Recurrent Neural Network
-
-% LSTM : Long-Short Term Memory
-
-% CNN : Convolutional Neural Network
-
-% BERT : Bidirectional Encoder Representations from Transformers
-
-% GPT : Generative Pre-trained Transformer
-
-% RoBERTa : Robustly Optimized BERT Approach
-
-% API : Application Programming Interface
-
-% MLM : Masked Language Modeling
-
-% CLM : Casual Language Modeling
-
-% CPU : Central Processing Unit
-
-% GPU : Graphics Processing Unit
-
-% TPU : Tensor Processing Unit
-
-% CFM : Confusion Matrix
-
-% GB : Gigabyte
-
-% LR : Learning Rate
-
-% DOH : Hydraulic Works Direction / Dirección de Obras Hidráulicas
-
-% SAG : Agricultural and Livestock Service / Servicio Agrícola y Ganadero
-
-% DGA : General Directorate of Water / Dirección General de Aguas
-
-% ALphabetical
- ANID: Agencia Nacional de Investigación y Desarrollo
- 
- API: Interfaz de programación de aplicaciones
- 
- 
 
 % Ingenieros prefieren la bibliografia antes que los anexos
 
 \cleardoublepage
 
-\addcontentsline{toc}{chapter}{Referencias}
 % {\color{blue} En esta sección de debe incluir todas las referencias utilizadas en la tesis. Se debe evitar el uso de páginas web o fuentes no formales de información. (Máximo 15 páginas)
 
 % \vspace{0.5cm}
@@ -201,8 +126,7 @@ En esta sección, se deben incluir los agradecimientos en primer lugar a las fue
 
 % Para mayor información consultar: \url{https://uandes.libguides.com/citasyreferencias} 
 
-\bibliographystyle{../../common/newapa}
-\bibliography{../../common/references}
+\printbibliography[heading=bibintoc,title={Referencias}]
 
 
 \cleardoublepage

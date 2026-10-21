@@ -3,35 +3,67 @@
 \usepackage[acronym,toc]{glossaries}
 \makeglossaries
 
-\newglossaryentry{latex}
-{
-        name=latex,
-        description={Is a mark up language specially suited for 
-scientific documents}
-}
-
-\newglossaryentry{maths}
-{
-        name=mathematics,
-        description={Mathematics is what mathematicians do}
-}
-
-\newglossaryentry{formula}
-{
-        name=formula,
-        description={A mathematical expression}
-}
-
 \newglossaryentry{benchmark}
 {
         name={\textit{benchmark}},
+        sort={benchmark},
         plural={\textit{benchmarks}},
         description={Conjunto estandarizado de instancias de prueba utilizado
 para evaluar y comparar el desempeño de algoritmos o \textit{solvers}}
 }
 
-\newacronym{gcd}{GCD}{Greatest Common Divisor}
+\newglossaryentry{solver}
+{
+        name={\textit{solver}},
+        sort={solver},
+        plural={\textit{solvers}},
+        description={Programa o algoritmo que resuelve una clase de problemas de
+optimización, recibiendo una instancia como entrada y entregando una solución
+(óptima o aproximada) junto con información sobre su ejecución}
+}
 
-\newacronym{lcm}{LCM}{Least Common Multiple}
+\newglossaryentry{feature}
+{
+        name={\textit{feature}},
+        sort={feature},
+        plural={\textit{features}},
+        description={Característica medible de una instancia de un problema,
+calculada directamente a partir de sus datos, que se utiliza para describirla
+y compararla con otras instancias}
+}
+
+\newglossaryentry{sparsity}
+{
+        name={\textit{sparsity}},
+        sort={sparsity},
+        description={Grado de dispersión de una matriz, es decir, la proporción
+de sus entradas que son iguales a cero}
+}
+
+\newglossaryentry{sdpasparse}
+{
+        name={SDPA \textit{sparse}},
+        sort={sdpa sparse},
+        description={Formato de archivo de texto estándar para describir
+instancias de \acrshort{sdp}, en el que solo se almacenan las entradas no nulas
+de las matrices del problema}
+}
+
+\newglossaryentry{framework}
+{
+        name={\textit{framework}},
+        sort={framework},
+        description={Marco de trabajo: conjunto estructurado de métodos,
+herramientas y convenciones que guía la aplicación de una metodología}
+}
+
+\newglossaryentry{worstcase}
+{
+        name={\textit{worst-case scenario}},
+        sort={worst-case scenario},
+        description={Análisis del peor caso: estudio del comportamiento de un
+algoritmo sobre la instancia más desfavorable posible, que entrega cotas o
+garantías válidas para cualquier instancia del problema}
+}
 
 

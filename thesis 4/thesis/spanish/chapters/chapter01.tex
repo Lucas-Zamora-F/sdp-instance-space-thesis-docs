@@ -2,60 +2,93 @@
 \chapter{Introducción}
 \label{ch:intro}
 
-\textcolor{blue}{En esta sección se debe incluir el fundamento general de la motivación de la investigación desarrollada en la tesis. También se deben incluir la hipótesis de trabajo y los objetivos general y específicos. Máximo 5 páginas. Use el mismo tamaño, tipo de letra e interlineado de este formato.}
+\section{Motivación} %Listo
 
-\section{Motivación}
-En la actualidad, numerosos problemas de toma de decisiones se modelan como problemas de optimización y se resuelven mediante algoritmos computacionales,
-que aun cuando pueden buscar llegar a una misma solución, pueden diferir considerablemente en las estrategias algorítmicas utilizadas. 
+La \acrfull{sdp} constituye una de las clases de optimización convexa de mayor relevancia
+práctica y teórica.
+Sus aplicaciones abarcan desde el diseño de controladores robustos
+\parencite{faresROBUSTCONTROLSEQUENTIAL2002} y la síntesis de filtros
+en ingeniería de sistemas \parencite{liLinearMatrixInequality1997,wuFIRFilterDesign1996},
+hasta la relajación de problemas combinatoriales NP-difíciles —como corte máximo,
+coloreo de grafos y programación cuadrática binaria—,
+el procesamiento de señales, el aprendizaje automático y la geometría algebraica.
+Esta versatilidad ha motivado el desarrollo de una variedad de \glspl{solver} especializados que
+implementan distintos paradigmas algorítmicos: métodos de punto interior primal-dual,
+métodos de barrera dual, y métodos de Lagrangiano aumentado orientados a gran escala.
 
-Por ellos, para un mismo problema existen múltiples alternativas tanto comerciales como propias, por lo que nace la pregunta: 
-¿cuál es el mejor algoritmo para un problema específico?
+Sin embargo, la pregunta de qué \textit{solver es más adecuado para un problema dado}
+permanece abierta.
+Los \glspl{benchmark} tradicionales suelen evaluar el desempeño de los algoritmos mediante métricas
+agregadas, como el rendimiento promedio sobre un conjunto predefinido de instancias de prueba o los 
+análisis de \gls{worstcase} que entregan garantías generales sobre el comportamiento de los algoritmos.
+Si bien estos enfoques permiten obtener una visión general del desempeño, también pueden
+ocultar patrones relevantes asociados a características específicas de las instancias.
+En consecuencia, se pierde capacidad para identificar las fortalezas y debilidades
+particulares de cada algoritmo frente a distintas estructuras del problema.
 
-A lo largo de los años, una respuesta simple a esta pregunta ha sido los \glspl{benchmark}, los cuales permiten comparar diferentes métricas de rendimiento sobre un conjunto
-de instancias de prueba. Sin embargo, estos \glspl{benchmark} presentan problemas fundamentales, tales como:
-\begin{itemize}
-   \item Por lo general, solo toman en consideración métricas como rendimiento promedio o en el peor caso (\textit{worst case}), lo cual puede ocultar fortalezas y 
-   debilidades específicas de cada algoritmo.
-   \item Para que un \gls{benchmark} sea representativo, se requiere de un conjunto de instancias de prueba lo suficientemente grande y diverso, 
-   lo cual puede ser costoso y difícil de conseguir.
-\end{itemize}
+El marco metodológico de \acrfull{isa}, introducido por Smith-Miles y Muñoz, el cual extiende
+aquel propuesto por Rice en \textit{The Algorithm Selection Problem} \parencite{riceAlgorithmSelectionProblem1976},
+ ofrece una respuesta a esta pregunta.
+\acrshort{isa} proyecta las instancias de un problema en un espacio bidimensional definido
+por sus características (\glspl{feature}) y, sobre ese espacio, delimita las regiones en que
+cada algoritmo exhibe rendimiento superior.
+Esto permite identificar de forma visual y cuantitativa las \textit{fortalezas} y
+\textit{debilidades} de cada \gls{solver}, así como detectar regiones del espacio de instancias
+que se encuentran subrepresentadas en los \glspl{benchmark}
+disponibles \parencite{smith-milesInstanceSpaceAnalysis2023}.
 
-Estos problemas pueden derivar en que los resultados sean sesgados y no representativos de la realidad. Esta observación no es nueva: 
-ha sido reportada en múltiples ocasiones y ha llevado a que se busquen nuevas formas de evaluar y comparar algoritmos, en particular existe una 
-metodología reciente llamada Análisis del Espacio de Instancias (\textit{Instance Space Analysis}, ISA) desarrollada por Smith-Miles y Muñoz 
-\citeyearpar{smith-milesInstanceSpaceAnalysis2023}, 
-la cual se basa en el trabajo de Rice \cite{riceAlgorithmSelectionProblem1976}. Esta metodología busca caracterizar y comparar algoritmos a través de un 
-espacio de instancias, 
-el cual se genera a partir de un conjunto de características de las instancias (\textit{features}) y permite visualizar y analizar el rendimiento de los 
-algoritmos en distintas regiones de dicho espacio.
+Una limitación frecuente en los estudios basados en \acrshort{isa} es la escasez de
+instancias en ciertas regiones del espacio, lo que dificulta la extracción de conclusiones
+robustas sobre el rendimiento de los algoritmos en esas zonas.
+Para subsanar esta limitación, \textcite{smith-milesGeneratingNewTest2015}
+propusieron el uso de algoritmos genéticos que evolucionan instancias existentes hacia
+regiones objetivo del espacio de instancias, generando nuevas instancias con características
+deseables de forma automatizada.
 
-Si bien esta metodología ha sido aplicada a diversos problemas de optimización en el pasado, existe un vacío en la literatura respecto a su aplicación a 
-problemas de programación semidefinida (SDP), los cuales son de gran relevancia en la actualidad, puesto que son utilizados para resolver problemas de optimización 
-combinatoria, control, aprendizaje automático, entre otros. 
-Por otra parte, en la actualidad, no existen muchas fuentes de instancias de prueba para problemas de programación semidefinida, lo cual dificulta la evaluación y 
-comparación de algoritmos para este tipo de problemas.
+La aplicación conjunta de la metodología \acrshort{isa} y generación evolutiva de instancias basada 
+en la misma metodología para \acrshort{sdp} representa una contribución original: a la fecha, no existe un estudio
+sistemático del espacio de instancias de \acrshort{sdp} que integre caracterización
+por medio de características, análisis comparativo de \glspl{solver} y generación dirigida de nuevas 
+instancias.
+Este trabajo aborda esa brecha.
 
-Esto permite plantear la siguiente pregunta de investigación: 
-¿Es posible aplicar la metodología ISA a problemas de programación semidefinida?
-Y, si es así, ¿es posible llevar un paso más allá esta metodología para guiar la generación de nuevas instancias?
+\section{Hipótesis}%Listo
 
-
-\section{Hipótesis}
-
-\textcolor{blue}{La hipótesis abordada por esta tesis se divide en las siguientes preguntas de investigación:}
-\begin{itemize}
-   \item PI1:
-   \item PI2:
-\end{itemize}
-
+Las instancias de \acrshort{sdp} se distribuyen de forma no uniforme en el espacio definido
+por sus \glspl{feature}, y esta distribución determina en gran medida el
+rendimiento relativo de los \glspl{solver} disponibles. En consecuencia, es posible: (i) caracterizar
+las regiones del espacio de instancias en que cada \gls{solver} presenta ventajas comparativas,
+identificando las \glspl{feature} que condicionan su desempeño; y (ii) generar mediante
+evolución dirigida nuevas instancias con características deseables que amplíen la
+cobertura experimental del espacio, enriqueciendo así la capacidad de análisis y de selección de
+algoritmos.
 
 \section{Objetivos}
-\subsection{Objetivo general}
-\subsection{Objetivos específicos}
-\begin{enumerate}[]
-\item
-\item
-\item
+
+\subsection{Objetivo General}%Listo
+
+Caracterizar el espacio de instancias de la \acrfull{sdp} mediante el análisis sistemático de
+\glspl{feature}, el estudio comparativo del rendimiento de \glspl{solver} representativos,
+y la generación evolutiva de instancias sintéticas que amplíen la cobertura experimental del espacio de
+instancias.
+
+\subsection{Objetivos Específicos}%Listo
+
+\begin{enumerate}
+    \item Diseñar un conjunto de \glspl{feature} computables directamente desde instancias
+    \acrshort{sdp} en formato \gls{sdpasparse}, que capturen dimensiones relevantes
+    de la geometría del problema tales como la estructura de bloques, \gls{sparsity}, la conectividad del grafo
+    agregado y las propiedades de chordalidad.
+
+    \item Construir el espacio de instancias de \acrshort{sdp} mediante el \gls{framework} \acrshort{isa} y
+    analizar las fortalezas y debilidades de un conjunto representativo de \glspl{solver}, identificando las regiones
+    del espacio en que cada algoritmo exhibe rendimiento superior y las \glspl{feature} que explican
+    dicho rendimiento.
+
+    \item Generar instancias sintéticas de \acrshort{sdp} con características estructurales deseables mediante
+    un \acrfull{ga} que evoluciona instancias existentes hacia regiones subpobladas del espacio de instancias,
+    ampliando la cobertura experimental disponible para el análisis y permitiendo la generación de instancias
+    con características deseables para otros fines.
 \end{enumerate}
 
 \section{Estructura de la tesis}
