@@ -1,0 +1,29 @@
+# Archivos auxiliares generados por LaTeX
+*.aux
+*.log
+*.toc
+*.lof
+*.lot
+*.out
+*.bbl
+*.blg
+*.acn
+*.acr
+*.alg
+*.glo
+*.gls
+*.glg
+*.glsdefs
+*.ist
+*.idx
+*.ilg
+*.ind
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.xdv
+
+# PDF compilado de la tesis
+spanish/main/Tesis.pdf
+english/main/Thesis.pdf

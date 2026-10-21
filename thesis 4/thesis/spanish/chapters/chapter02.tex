@@ -2,46 +2,9 @@
 \chapter{Revisión bibliográfica}
 \label{ch:litRev}
 
-\color{blue}{Esta sección presenta una revisión exhaustiva de la literatura sobre los principales temas y conceptos relevantes para esta investigación.}
+\textcolor{blue}{Esta sección presenta una revisión exhaustiva de la literatura sobre los principales temas y conceptos relevantes para esta investigación.}%Eliminar
 
-\section{Sección 1}
 
-\begin{figure}[H]
-\centering
-\includegraphics[scale=0.2]{images/RNNFNN.jpeg}
-\caption[Arquitecturas FNN y RNN]{Arquitecturas FNN y RNN. Fuente: \cite{maldonado2022analytics}}
-\label{fig:RNN}
-\end{figure}
 
-Otro avance importante en el procesamiento del lenguaje natural fue la introducción de las redes neuronales convolucionales (CNN). La operación de convolución se define como:
-\[
-(f * g)(x, y) = \sum_{i=0}^{m-1} \sum_{j=0}^{n-1} f(i, j) \cdot g(x-i, y-j)
-\]
-donde:
-\begin{enumerate}
-    \item $f$ y $g$ representan la imagen de entrada y el filtro, respectivamente;
-    \item $m$ y $n$ indican las dimensiones del filtro;
-    \item $(x,y)$ son las coordenadas espaciales del mapa de características de salida.
-\end{enumerate}
+\section{Programación semidefinida}
 
-El mecanismo de autoatención multicabezal calcula tres matrices importantes: consulta (Q), clave (K) y valor (V). Estas matrices se obtienen de la secuencia de entrada. La autoatención calcula una suma ponderada de los valores a partir de las puntuaciones de compatibilidad entre consultas y claves. Así, el modelo puede concentrarse en distintas partes de la secuencia según la importancia de cada palabra.
-
-Para una cabeza de atención, la operación se formula como:
-\[
-\text{Atención}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
-\]
-donde:
-\begin{itemize}
-    \item (Q), (K) y (V) son las matrices de consulta, clave y valor;
-    \item $d_k$ es la dimensión de los vectores de consulta y clave.
-\end{itemize}
-
-En las siguientes subsecciones se describen el preentrenamiento y el ajuste fino de modelos Transformer. Primero se explican los hiperparámetros, ya que son relevantes en ambas etapas.
-
-\subsection{Hiperparámetros}
-Los hiperparámetros son opciones de configuración que determinan el comportamiento y rendimiento de un modelo de aprendizaje automático \cite{Goodfellow-et-al-2016}. Se establecen antes del entrenamiento y no son aprendidos desde los datos. Distintos modelos y tareas pueden requerir valores diferentes \cite{bergstra2012random}.
-
-\begin{itemize}[]
-\item La tasa de aprendizaje controla el tamaño del paso con que se actualizan los parámetros. Una tasa alta puede acelerar la convergencia, pero también sobrepasar la solución óptima; una tasa baja ofrece actualizaciones más estables, aunque puede ralentizar la convergencia \cite{series/lncs/Bottou12}.
-\item El tamaño del lote corresponde al número de muestras procesadas en cada iteración. Los lotes grandes suelen producir actualizaciones más estables, pero requieren más memoria y recursos computacionales \cite{keskar2017largebatch}.
-\end{itemize}
