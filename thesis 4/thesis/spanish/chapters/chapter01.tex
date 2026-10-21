@@ -5,6 +5,39 @@
 \textcolor{blue}{En esta sección se debe incluir el fundamento general de la motivación de la investigación desarrollada en la tesis. También se deben incluir la hipótesis de trabajo y los objetivos general y específicos. Máximo 5 páginas. Use el mismo tamaño, tipo de letra e interlineado de este formato.}
 
 \section{Motivación}
+En la actualidad, numerosos problemas de toma de decisiones se modelan como problemas de optimización y se resuelven mediante algoritmos computacionales,
+que aun cuando pueden buscar llegar a una misma solución, pueden diferir considerablemente en las estrategias algorítmicas utilizadas. 
+
+Por ellos, para un mismo problema existen múltiples alternativas tanto comerciales como propias, por lo que nace la pregunta: 
+¿cuál es el mejor algoritmo para un problema específico?
+
+A lo largo de los años, una respuesta simple a esta pregunta ha sido los \glspl{benchmark}, los cuales permiten comparar diferentes métricas de rendimiento sobre un conjunto
+de instancias de prueba. Sin embargo, estos \glspl{benchmark} presentan problemas fundamentales, tales como:
+\begin{itemize}
+   \item Por lo general, solo toman en consideración métricas como rendimiento promedio o en el peor caso (\textit{worst case}), lo cual puede ocultar fortalezas y 
+   debilidades específicas de cada algoritmo.
+   \item Para que un \gls{benchmark} sea representativo, se requiere de un conjunto de instancias de prueba lo suficientemente grande y diverso, 
+   lo cual puede ser costoso y difícil de conseguir.
+\end{itemize}
+
+Estos problemas pueden derivar en que los resultados sean sesgados y no representativos de la realidad. Esta observación no es nueva: 
+ha sido reportada en múltiples ocasiones y ha llevado a que se busquen nuevas formas de evaluar y comparar algoritmos, en particular existe una 
+metodología reciente llamada Análisis del Espacio de Instancias (\textit{Instance Space Analysis}, ISA) desarrollada por Smith-Miles y Muñoz 
+\citeyearpar{smith-milesInstanceSpaceAnalysis2023}, 
+la cual se basa en el trabajo de Rice \cite{riceAlgorithmSelectionProblem1976}. Esta metodología busca caracterizar y comparar algoritmos a través de un 
+espacio de instancias, 
+el cual se genera a partir de un conjunto de características de las instancias (\textit{features}) y permite visualizar y analizar el rendimiento de los 
+algoritmos en distintas regiones de dicho espacio.
+
+Si bien esta metodología ha sido aplicada a diversos problemas de optimización en el pasado, existe un vacío en la literatura respecto a su aplicación a 
+problemas de programación semidefinida (SDP), los cuales son de gran relevancia en la actualidad, puesto que son utilizados para resolver problemas de optimización 
+combinatoria, control, aprendizaje automático, entre otros. 
+Por otra parte, en la actualidad, no existen muchas fuentes de instancias de prueba para problemas de programación semidefinida, lo cual dificulta la evaluación y 
+comparación de algoritmos para este tipo de problemas.
+
+Esto permite plantear la siguiente pregunta de investigación: 
+¿Es posible aplicar la metodología ISA a problemas de programación semidefinida?
+Y, si es así, ¿es posible llevar un paso más allá esta metodología para guiar la generación de nuevas instancias?
 
 
 \section{Hipótesis}
