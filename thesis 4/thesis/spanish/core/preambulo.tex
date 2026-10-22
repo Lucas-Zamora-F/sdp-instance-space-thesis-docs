@@ -54,6 +54,19 @@
 \usepackage{csquotes}
 \usepackage[backend=biber,style=apa]{biblatex}
 \addbibresource{../../common/references.bib}
+% APA 7 en español usa "y" (no "&") entre autores en citas parentéticas
+\DeclareDelimFormat[parencite]{finalnamedelim}{\addspace\bibstring{and}\space}
+% Zotero exporta la URL de las paginas web en howpublished; se mueve a url para que APA la imprima
+\DeclareSourcemap{
+  \maps[datatype=bibtex]{
+    \map{
+      \step[fieldsource=howpublished, match=\regexp{\A(https?://.+)\Z}, final]
+      \step[fieldset=url, origfieldval]
+      \step[fieldset=howpublished, null]
+      \step[fieldsource=url, match=\regexp{\\_}, replace=\regexp{_}]
+    }
+  }
+}
 
 % Si usted está utilizando un teclado en español, puede ser útil
 % usar los paquetes a continuacion. De otra manera tendrá que generar las

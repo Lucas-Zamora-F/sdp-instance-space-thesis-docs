@@ -9,33 +9,37 @@ práctica y teórica.
 Sus aplicaciones abarcan desde el diseño de controladores robustos
 \parencite{faresROBUSTCONTROLSEQUENTIAL2002} y la síntesis de filtros
 en ingeniería de sistemas \parencite{liLinearMatrixInequality1997,wuFIRFilterDesign1996},
-hasta la relajación de problemas combinatoriales NP-difíciles —como corte máximo,
+hasta la relajación de problemas combinatoriales NP-difíciles —como corte máximo \parencite{goemansImprovedApproximationAlgorithms1995},
 coloreo de grafos y programación cuadrática binaria—,
-el procesamiento de señales, el aprendizaje automático y la geometría algebraica.
+el procesamiento de señales, el aprendizaje automático y la optimización polinomial mediante sumas de cuadrados
+\parencite{lasserreGlobalOptimizationPolynomials2001,parriloSemidefiniteProgrammingRelaxations2003}.
 Esta versatilidad ha motivado el desarrollo de una variedad de \glspl{solver} especializados que
-implementan distintos paradigmas algorítmicos: métodos de punto interior primal-dual,
-métodos de barrera dual, y métodos de Lagrangiano aumentado orientados a gran escala.
+implementan distintos paradigmas algorítmicos: métodos de punto interior, tanto primal-dual
+como de escalamiento dual, y métodos de Lagrangiano aumentado orientados a gran escala.
 
 Sin embargo, la pregunta de qué \textit{solver es más adecuado para un problema dado}
 permanece abierta.
 Los \glspl{benchmark} tradicionales suelen evaluar el desempeño de los algoritmos mediante métricas
-agregadas, como el rendimiento promedio sobre un conjunto predefinido de instancias de prueba o los 
+agregadas, como el rendimiento promedio sobre un conjunto predefinido de instancias de
+prueba \parencite{dolanBenchmarkingOptimizationSoftware2002}, o los
 análisis de \gls{worstcase} que entregan garantías generales sobre el comportamiento de los algoritmos.
 Si bien estos enfoques permiten obtener una visión general del desempeño, también pueden
-ocultar patrones relevantes asociados a características específicas de las instancias.
+ocultar patrones relevantes asociados a características específicas de las
+instancias \parencite{hookerTestingHeuristicsWe1995a,smith-milesObjectiveMeasuresAlgorithm2014a}.
 En consecuencia, se pierde capacidad para identificar las fortalezas y debilidades
 particulares de cada algoritmo frente a distintas estructuras del problema.
 
-El marco metodológico de \acrfull{isa}, introducido por Smith-Miles y Muñoz, el cual extiende
-aquel propuesto por Rice en \textit{The Algorithm Selection Problem} \parencite{riceAlgorithmSelectionProblem1976},
- ofrece una respuesta a esta pregunta.
+El marco metodológico de \acrfull{isa}, introducido por \textcite{smith-milesObjectiveMeasuresAlgorithm2014a}
+y posteriormente consolidado por \textcite{smith-milesInstanceSpaceAnalysis2023a},
+el cual extiende aquel propuesto por Rice en \textit{The Algorithm Selection Problem} \parencite{riceAlgorithmSelectionProblem1976},
+ofrece una respuesta a esta pregunta.
 \acrshort{isa} proyecta las instancias de un problema en un espacio bidimensional definido
 por sus características (\glspl{feature}) y, sobre ese espacio, delimita las regiones en que
 cada algoritmo exhibe rendimiento superior.
 Esto permite identificar de forma visual y cuantitativa las \textit{fortalezas} y
 \textit{debilidades} de cada \gls{solver}, así como detectar regiones del espacio de instancias
 que se encuentran subrepresentadas en los \glspl{benchmark}
-disponibles \parencite{smith-milesInstanceSpaceAnalysis2023}.
+disponibles \parencite{smith-milesInstanceSpaceAnalysis2023a}.
 
 Una limitación frecuente en los estudios basados en \acrshort{isa} es la escasez de
 instancias en ciertas regiones del espacio, lo que dificulta la extracción de conclusiones
