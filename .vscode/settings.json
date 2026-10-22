@@ -23,5 +23,6 @@
       "args": ["%DOCFILE%"]
     }
   ],
-  "latex-workshop.latex.recipe.default": "pdflatex → biber → makeglossaries → pdflatex × 2"
+  "latex-workshop.latex.recipe.default": "pdflatex → biber → makeglossaries → pdflatex × 2",
+  "latex-workshop.latex.autoClean.run": "onFailed"
 }
