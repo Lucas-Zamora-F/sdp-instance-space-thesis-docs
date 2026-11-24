@@ -48,9 +48,10 @@
 % Libreria para ajustar espaciado entre lineas
 \usepackage[doublespacing]{setspace}
 
-% Libreria con estilo APA 7 para bibliografia (compilar con biber)
+% Libreria con estilo numerico para bibliografia (compilar con biber)
+% sorting=none: las referencias se numeran por orden de aparicion
 \usepackage{csquotes}
-\usepackage[backend=biber,style=apa]{biblatex}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
 \addbibresource{../../common/references.bib}
 
 % Si usted está utilizando un teclado en español, puede ser útil
@@ -175,6 +176,9 @@
 \setlength{\parindent}{0cm}
 \usepackage{float}
 \usepackage{subfigure}
+% Pies de figura y tabla con margen lateral adicional respecto del texto
+\usepackage{caption}
+\captionsetup{margin=1cm}
 \usepackage{array}
 \newcolumntype{E}{>{$}c<{$}}
 \usepackage{longtable}

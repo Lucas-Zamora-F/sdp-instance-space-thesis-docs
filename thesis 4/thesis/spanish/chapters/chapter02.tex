@@ -7,307 +7,685 @@
 
 La \acrfull{sdp} es una clase de optimización convexa en la que se optimiza una función
 lineal sujeta a restricciones lineales y a una restricción de semidefinitud positiva sobre
-una matriz simétrica \parencite{vandenbergheSemidefiniteProgramming1996}. En términos generales,
-extiende la programación lineal al reemplazar la condición de no negatividad de un vector
-por la pertenencia de una matriz al cono de matrices semidefinidas positivas. Esta generalización
-permite modelar problemas donde la variable de decisión no es solo un vector, sino una matriz
-cuyas propiedades espectrales deben cumplir ciertas condiciones.
+una matriz simétrica \parencite{vandenbergheSemidefiniteProgramming1996}.
 
-Sea $\mathbb{S}^n$ el espacio de matrices simétricas reales de orden $n$. Una matriz
-$X\in\mathbb{S}^n$ es semidefinida positiva si
+\subsection{Optimización convexa}
+\label{subsec:optimizacion_convexa}
+
+La noción central es la de conjunto convexo. Un conjunto $\mathcal{C} \subseteq \mathbb{R}^k$ es
+convexo cuando, para cualquier par de puntos $u, v \in \mathcal{C}$, el segmento que los une queda
+completamente contenido en $\mathcal{C}$; esto es,
 \[
-    z^\top X z \geq 0, \qquad \forall z\in\mathbb{R}^n,
+    \theta u + (1-\theta) v \in \mathcal{C} \qquad \text{para todo } \theta \in [0,1]
 \]
-lo que se denota por $X\succeq 0$. El conjunto
+\parencite[p.~23]{boydConvexOptimization2004}. Un punto de la forma $\theta u + (1-\theta) v$,
+con $\theta \in [0,1]$, se denomina \textit{combinación convexa} de $u$ y $v$, y puede
+interpretarse como un promedio ponderado de ambos puntos
+\parencite[p.~24]{boydConvexOptimization2004}. La Figura~\ref{fig:conjunto_convexo} ilustra la
+diferencia entre un conjunto convexo y uno que no lo es.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.25, punto/.style={circle, fill=black, inner sep=1.3pt}]
+        % Conjunto convexo
+        \fill[gray!20, draw=black, thick] (0,0.9) ellipse (1.25 and 0.85);
+        \node[punto, label=left:{$u$}]  (u1) at (-0.65,0.55) {};
+        \node[punto, label=right:{$v$}] (v1) at (0.7,1.3) {};
+        \draw[thick] (u1) -- (v1);
+        \node at (0,-0.35) {(a) Convexo};
+        % Conjunto no convexo
+        \begin{scope}[xshift=3.6cm]
+            \fill[gray!20, draw=black, thick] plot[smooth cycle, tension=0.7]
+                coordinates {(-1.2,0.2) (0,0) (1.2,0.2) (1.1,1.6) (0.6,1.65) (0,0.75)
+                (-0.6,1.65) (-1.1,1.6)};
+            \node[punto, label=left:{$u$}]  (u2) at (-0.75,1.3) {};
+            \node[punto, label=right:{$v$}] (v2) at (0.75,1.3) {};
+            \draw[thick] (u2) -- (v2);
+            \node at (0,-0.35) {(b) No convexo};
+        \end{scope}
+    \end{tikzpicture}
+    \caption[Conjunto convexo y conjunto no convexo.]{(a) En un conjunto convexo, el segmento entre dos puntos cualesquiera $u$ y $v$
+    queda contenido en el conjunto. (b) En un conjunto no convexo existen pares de puntos cuyo
+    segmento sale del conjunto. Adaptada de
+    \textcite[p.~24]{boydConvexOptimization2004}.}
+    \label{fig:conjunto_convexo}
+\end{figure}
+
+De manera análoga, una función $g : \mathbb{R}^k \to \mathbb{R}$ definida sobre un dominio convexo
+es convexa si su valor en cualquier combinación convexa de dos puntos no supera la misma
+combinación de sus valores en esos puntos:
 \[
-    \mathbb{S}_+^n=\{X\in\mathbb{S}^n: X\succeq 0\}
+    g\bigl(\theta u + (1-\theta) v\bigr) \leq \theta g(u) + (1-\theta) g(v)
+    \qquad \text{para todo } \theta \in [0,1].
 \]
-forma un cono convexo, donde según la formulación de optimización cónica presentada por
-\textcite{glineurConicOptimizationElegant2001}, un conjunto $K$ es un cono convexo si,
-para todo $x,y\in K$ y para todo $\alpha,\beta\geq 0$, se cumple que
-$\alpha x+\beta y\in K$. En otras palabras, el conjunto es cerrado bajo combinaciones
-cónicas no negativas. Esta convexidad es central: aunque la restricción $X\succeq 0$ es
-no lineal en el sentido de que impone condiciones sobre los autovalores de $X$, el conjunto
-factible resultante sigue siendo convexo.
+Geométricamente, esto significa que la cuerda que une dos puntos del gráfico de $g$ nunca queda
+por debajo del gráfico, como se muestra en la Figura~\ref{fig:funcion_convexa}. Las funciones
+lineales cumplen esta condición con igualdad, por lo que son convexas
+\parencite[p.~67]{boydConvexOptimization2004}.
 
-Una forma estándar primal de un problema de programación semidefinida es
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.1, punto/.style={circle, fill=black, inner sep=1.3pt}]
+        \draw[->] (-2.6,0) -- (2.8,0) node[below] {$t$};
+        \draw[->] (0,-0.3) -- (0,2.9);
+        \draw[thick, domain=-2.3:2.3, samples=60] plot (\x, {0.38*\x*\x + 0.3})
+            node[right] {$g$};
+        \coordinate (A) at (-1.7, {0.38*1.7*1.7 + 0.3});
+        \coordinate (B) at (1.3, {0.38*1.3*1.3 + 0.3});
+        \draw[dashed, thick] (A) -- (B);
+        \node[punto, label=left:{$(u, g(u))$}]  at (A) {};
+        \node[punto, label=right:{$(v, g(v))$}] at (B) {};
+    \end{tikzpicture}
+    \caption[Gráfico de una función convexa.]{Gráfico de una función convexa $g$. La cuerda (línea discontinua) entre dos puntos
+    cualesquiera del gráfico queda por encima de este. Adaptada de
+    \textcite[p.~67]{boydConvexOptimization2004}.}
+    \label{fig:funcion_convexa}
+\end{figure}
+
+Un problema de optimización es convexo cuando se minimiza una función objetivo convexa sobre un
+conjunto factible convexo~\parencite[pp.~136--137]{boydConvexOptimization2004}. Esta estructura
+tiene una consecuencia fundamental: en un problema convexo, todo óptimo local es también un
+óptimo global~\parencite[p.~138]{boydConvexOptimization2004}. Además, muchos problemas convexos pueden
+resolverse de forma eficiente y confiable mediante métodos de punto
+interior~\parencite[pp.~7--8]{boydConvexOptimization2004}, que son la base de varios de los
+solvers de programación semidefinida más utilizados~\parencite{vandenbergheSemidefiniteProgramming1996}.
+
+\subsection{Formulación}
+\label{subsec:sdp_formulacion}
+
+Siguiendo la notación de \textcite{vandenbergheSemidefiniteProgramming1996}, en su forma
+primal un problema de este tipo consiste en minimizar una función lineal de la
+variable $x \in \mathbb{R}^{m}$, exigiendo que permanezca semidefinida positiva una matriz
+formada por una matriz fija más una combinación lineal de otras matrices fijas, cuyos
+coeficientes son los componentes de $x$:
+\begin{equation}
+    \label{eq:sdp_vandenberghe}
+    \begin{aligned}
+        \text{minimizar}   \quad & c^\top x \\
+        \text{sujeto a}    \quad & F(x) \succeq 0,
+    \end{aligned}
+\end{equation}
+donde
+\begin{equation}
+    \label{eq:sdp_lmi}
+    F(x) \triangleq F_0 + \sum_{i=1}^{m} x_i F_i .
+\end{equation}
+Una instancia queda completamente determinada por el vector de costos $c \in \mathbb{R}^m$ y
+por las $m+1$ matrices simétricas $F_0, \ldots, F_m \in \mathbb{R}^{n \times n}$. El símbolo
+$\succeq$ expresa semidefinitud positiva: la forma cuadrática $z^\top F(x)\, z$ no puede tomar
+valores negativos para ningún $z \in \mathbb{R}^n$. Una restricción de la forma $F(x) \succeq 0$
+recibe el nombre de \textit{desigualdad matricial lineal} (\textit{linear matrix inequality},
+LMI), y un problema con la estructura de~\eqref{eq:sdp_vandenberghe} es lo que se conoce como
+\textit{programa semidefinido}~\parencite{vandenbergheSemidefiniteProgramming1996}.
+
+Un programa semidefinido es un problema de optimización convexa. El objetivo $c^\top x$ es lineal
+y, por lo tanto, convexo. El conjunto factible también lo es, debido a la forma en que $F$
+depende de $x$ en~\eqref{eq:sdp_lmi}: si $x$ e $y$ son factibles, la matriz evaluada en
+cualquier combinación convexa de ambos es la misma combinación de dos matrices semidefinidas
+positivas,
 \[
-\begin{aligned}
-    \min_{X\in\mathbb{S}^n}\quad & \langle C,X\rangle \\
-    \text{sujeto a}\quad & \langle A_i,X\rangle = b_i,
-        \qquad i=1,\ldots,m,\\
-    & X\succeq 0,
-\end{aligned}
+    F\bigl(\lambda x + (1-\lambda) y\bigr) = \lambda F(x) + (1-\lambda) F(y) \succeq 0,
 \]
-donde $C,A_1,\ldots,A_m\in\mathbb{S}^n$, $b\in\mathbb{R}^m$ y
-$\langle A,X\rangle=\mathrm{tr}(AX)$ corresponde al producto interno de Frobenius para
-matrices simétricas. En esta formulación, la función objetivo y las restricciones de igualdad
-son lineales en la variable matricial $X$, mientras que la restricción cónica $X\succeq 0$
-garantiza que la solución pertenezca al cono semidefinido positivo.
+y por ende también es semidefinida positiva~\parencite{vandenbergheSemidefiniteProgramming1996}.
 
-El problema dual asociado puede escribirse como
+\subsection{Casos particulares y aplicaciones}
+\label{subsec:sdp_aplicaciones}
+
+La programación lineal es un caso particular de~\eqref{eq:sdp_vandenberghe}. Un vector es no
+negativo componente a componente si y solo si la matriz diagonal que lo contiene es semidefinida
+positiva, de modo que las restricciones $Ax + b \geq 0$, con $A \in \mathbb{R}^{n \times m}$ y
+$b \in \mathbb{R}^n$, equivalen a $F(x) = \operatorname{diag}(Ax + b) \succeq 0$. En este caso,
+$F_0 = \operatorname{diag}(b)$ y cada $F_i$ es la matriz diagonal formada por la $i$-ésima
+columna de $A$~\parencite[p.~50]{vandenbergheSemidefiniteProgramming1996}. También pueden
+escribirse como programas semidefinidos los problemas cuadráticos convexos con restricciones
+cuadráticas convexas y la minimización del mayor valor propio de una matriz que depende
+afínmente de un vector de parámetros, problema que aparece en teoría de control, optimización
+estructural y teoría de grafos~\parencite[p.~54]{vandenbergheSemidefiniteProgramming1996}.
+
+En optimización combinatoria y no convexa, la programación semidefinida entrega cotas para
+problemas cuadráticos con restricciones cuadráticas, una clase que incluye a los problemas con
+objetivo y restricciones polinomiales~\parencite[pp.~59--60]{vandenbergheSemidefiniteProgramming1996}.
+El ejemplo más conocido es el problema de corte máximo (\textit{MAX-CUT}):
+\textcite{goemansImprovedApproximationAlgorithms1995} usaron su relajación semidefinida para
+construir un algoritmo aleatorizado cuyas soluciones tienen un valor esperado de al menos
+$0{,}87856$ veces el óptimo~\parencite[p.~1115]{goemansImprovedApproximationAlgorithms1995}. Para
+la optimización polinomial se han propuesto jerarquías de relajaciones semidefinidas cada vez más
+ajustadas~\parencite{lasserreGlobalOptimizationPolynomials2001,parriloSemidefiniteProgrammingRelaxations2003}.
+En teoría de control, muchos problemas de análisis y diseño se reducen a desigualdades
+matriciales lineales; por ejemplo, la existencia de una función de Lyapunov cuadrática que
+certifica la estabilidad de un sistema puede plantearse como un problema de factibilidad
+semidefinida~\parencite[pp.~61--62]{vandenbergheSemidefiniteProgramming1996}.
+\textcite{boydLinearMatrixInequalities1994} recopilan una gran cantidad de estos problemas.
+
+\subsection{Estructura de bloques y formato SDPA}
+\label{subsec:sdp_bloques}
+
+Varias desigualdades matriciales lineales $F^{(1)}(x) \succeq 0, \ldots, F^{(L)}(x) \succeq 0$
+pueden escribirse como una sola desigualdad sobre una matriz diagonal por bloques,
 \[
-\begin{aligned}
-    \max_{y\in\mathbb{R}^m}\quad & b^\top y \\
-    \text{sujeto a}\quad & C-\sum_{i=1}^{m} y_i A_i \succeq 0.
-\end{aligned}
+    F(x) = \operatorname{diag}\bigl(F^{(1)}(x), \ldots, F^{(L)}(x)\bigr) \succeq 0
 \]
-La restricción del dual se conoce como una desigualdad matricial lineal o
-\textit{linear matrix inequality} (LMI), ya que impone semidefinitud positiva sobre una matriz
-cuyos elementos dependen afínmente de las variables de decisión. En consecuencia,
-muchos problemas formulados mediante LMIs pueden interpretarse directamente como programas
-semidefinidos \parencite{vandenbergheSemidefiniteProgramming1996,boydLinearMatrixInequalities1994}.
+\parencite[p.~51]{vandenbergheSemidefiniteProgramming1996}. Cada matriz de datos hereda esta
+estructura, $F_i = \operatorname{diag}\bigl(F_i^{(1)}, \ldots, F_i^{(L)}\bigr)$, con
+$F_i^{(\ell)} \in \mathbb{R}^{n_\ell \times n_\ell}$ y $n = n_1 + \cdots + n_L$. Un programa
+lineal corresponde al caso en que todos los bloques son de tamaño uno, y una misma instancia
+puede combinar bloques semidefinidos con un bloque diagonal que agrupa restricciones
+lineales~\parencite{SDPAFormat}.
 
-Para todo par factible $(X,y)$ se cumple la dualidad débil,
+El formato SDPA, definido por los desarrolladores de SDPA y aceptado también por otros solvers
+como SDPT3~\parencite{tohImplementationUsageSDPT32012a}, almacena una instancia a partir de estos
+datos. SDPA considera el problema
 \[
-    \langle C,X\rangle - b^\top y
-    = \Big\langle C-\sum_{i=1}^{m} y_iA_i,\; X\Big\rangle \geq 0,
+    \text{minimizar} \;\; c^\top x
+    \quad \text{sujeto a} \quad
+    \sum_{i=1}^{m} F_i x_i - F_0 \succeq 0
 \]
-pues el producto interno de dos matrices semidefinidas positivas es no negativo. Sin embargo,
-a diferencia de la programación lineal, en \acrshort{sdp} la igualdad de los valores óptimos no
-está garantizada: pueden existir brechas de dualidad positivas u óptimos que no se alcanzan.
-Una condición suficiente para la dualidad fuerte es la condición de Slater, es decir, la existencia
-de un punto estrictamente factible ($X\succ 0$ en el primal, o
-$C-\sum_i y_iA_i\succ 0$ en el dual) \parencite{vandenbergheSemidefiniteProgramming1996}.
-Esta propiedad es relevante en la práctica, ya que los métodos de punto interior suponen
-factibilidad estricta, y las instancias que no la satisfacen suelen provocar dificultades numéricas
-o diferencias de comportamiento entre solvers.
+\parencite{SDPAFormat}, que coincide con~\eqref{eq:sdp_vandenberghe} salvo por el signo de
+$F_0$: la matriz $F_0$ almacenada en un archivo SDPA corresponde a $-F_0$ en la notación de esta
+sección. Un archivo contiene, en orden, el número de variables $m$, el número de bloques $L$, el
+tamaño de cada bloque, el vector $c$ y las matrices $F_0, \ldots, F_m$. Un tamaño negativo indica
+que el bloque es diagonal, en cuyo caso solo se almacena su diagonal. En la variante dispersa
+(SDPA \textit{sparse}, con extensión \texttt{.dat-s}) se omiten las entradas nulas y cada línea
+registra una entrada no nula mediante cinco números: el índice $i$ de la matriz $F_i$, el bloque,
+la fila y la columna dentro del bloque, y el valor. Como las matrices son simétricas, cada entrada
+fuera de la diagonal se almacena una sola vez~\parencite{SDPAFormat}. La
+Figura~\ref{fig:sdpa_sparse} muestra un ejemplo.
 
-La programación semidefinida incluye como casos particulares a la programación lineal y a
-ciertas formas de programación cuadrática convexa. Para ver la relación con programación
-lineal, considérese un vector $x\in\mathbb{R}^n$. La restricción de no negatividad
-$x\geq 0$ equivale a exigir que la matriz diagonal $\mathrm{diag}(x)$ sea semidefinida
-positiva, ya que los autovalores de una matriz diagonal son precisamente sus entradas
-diagonales. Por lo tanto,
+\begin{figure}[H]
+    \centering
+\begin{minipage}{0.55\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\small\setstretch{1}, frame=single, columns=fullflexible]
+"Example 1: mDim = 3, nBLOCK = 1, {2}"
+3 = mDIM
+1 = nBLOCK
+2 = bLOCKsTRUCT
+48, -8, 20
+0 1 1 1 -11
+0 1 2 2 23
+1 1 1 1 10
+1 1 1 2 4
+2 1 2 2 -8
+3 1 1 2 -8
+3 1 2 2 -2
+\end{lstlisting}
+\end{minipage}
+    \caption[Ejemplo de archivo en formato SDPA \textit{sparse}.]{Archivo en formato SDPA
+    \textit{sparse} de una instancia con $m = 3$ y un único bloque de tamaño $2$. La primera
+    línea es un comentario y la quinta contiene el vector $c$; cada línea siguiente describe una
+    entrada no nula. Adaptado de \textcite{SDPAFormat}.}
+    \label{fig:sdpa_sparse}
+\end{figure}
+
+\subsection{Problema dual}
+\label{subsec:sdp_dual}
+
+Todo programa semidefinido tiene asociado un segundo problema, denominado \textit{dual}, que
+también es un programa semidefinido. En el dual de~\eqref{eq:sdp_vandenberghe}, la variable de
+decisión deja de ser un vector y pasa a ser una matriz simétrica $Z \in \mathbb{R}^{n \times n}$
+\parencite[p.~63]{vandenbergheSemidefiniteProgramming1996}:
+\begin{equation}
+    \label{eq:sdp_dual}
+    \begin{aligned}
+        \text{maximizar}   \quad & {-\operatorname{Tr}(F_0 Z)} \\
+        \text{sujeto a}    \quad & \operatorname{Tr}(F_i Z) = c_i, \quad i = 1, \ldots, m, \\
+                                 & Z \succeq 0,
+    \end{aligned}
+\end{equation}
+donde $\operatorname{Tr}$ denota la traza. Para matrices simétricas $A$ y $B$ de igual tamaño,
+$\operatorname{Tr}(AB) = \sum_{r,s} A_{rs} B_{rs}$ es el producto interno usual entre matrices.
+Una matriz que satisface las
+restricciones de~\eqref{eq:sdp_dual} se dice \textit{dual factible} y, en contraposición, el
+problema original~\eqref{eq:sdp_vandenberghe} recibe el nombre de problema
+\textit{primal}~\parencite[p.~63]{vandenbergheSemidefiniteProgramming1996}.
+
+Cuál de los dos problemas se denomina primal es, sin embargo, una convención. SDPA adopta la misma
+que \textcite{vandenbergheSemidefiniteProgramming1996} y llama primal al problema sobre un vector
+de variables sujeto a una desigualdad matricial
+lineal~\parencite[p.~3]{fujisawaHighperformanceSoftwarePackage2010}. CSDP y SDPT3, en cambio,
+llaman primal al problema sobre una matriz semidefinida positiva sujeta a restricciones lineales
+de igualdad, es decir, a una forma equivalente a~\eqref{eq:sdp_dual} salvo
+signos~\parencite{borchersCSDPLibrarySemidefinite1999,tohImplementationUsageSDPT32012a}. En esta tesis se mantiene
+la convención de \textcite{vandenbergheSemidefiniteProgramming1996}.
+
+La utilidad del dual radica en que sus soluciones factibles acotan el valor óptimo del primal, y
+viceversa. Si $x$ es primal factible y $Z$ es dual factible, usando las restricciones de
+igualdad de~\eqref{eq:sdp_dual} se obtiene
+\begin{equation}
+    \label{eq:sdp_brecha}
+    c^\top x + \operatorname{Tr}(F_0 Z)
+    = \sum_{i=1}^{m} x_i \operatorname{Tr}(F_i Z) + \operatorname{Tr}(F_0 Z)
+    = \operatorname{Tr}\bigl(F(x) Z\bigr) \geq 0,
+\end{equation}
+donde la desigualdad se debe a que la traza del producto de dos matrices semidefinidas positivas
+nunca es negativa~\parencite[p.~64]{vandenbergheSemidefiniteProgramming1996}. Por lo tanto,
+$-\operatorname{Tr}(F_0 Z) \leq c^\top x$. La diferencia entre ambos objetivos,
 \[
-    x\geq 0 \quad \Longleftrightarrow \quad \mathrm{diag}(x)\succeq 0.
+    \eta = c^\top x + \operatorname{Tr}(F_0 Z) = \operatorname{Tr}\bigl(F(x) Z\bigr),
 \]
-De esta forma, el problema lineal $\min\{c^\top x : a_i^\top x = b_i,\ i=1,\ldots,m,\ x\geq 0\}$
-puede escribirse como un \acrshort{sdp} en forma estándar tomando $C=\mathrm{diag}(c)$ y
-$A_i=\mathrm{diag}(a_i)$. Con esta elección, la función objetivo y las restricciones dependen solo
-de la diagonal de $X$, y $X\succeq 0$ implica que dicha diagonal es no negativa; recíprocamente,
-todo $x\geq 0$ factible induce la solución factible $X=\mathrm{diag}(x)$ con el mismo valor
-objetivo. Ambos problemas tienen, por lo tanto, el mismo valor
-óptimo \parencite{vandenbergheSemidefiniteProgramming1996}. De manera análoga, una restricción
-cuadrática convexa $x^\top Q x + q^\top x + r \leq 0$, con $Q=LL^\top\succeq 0$, puede expresarse
-mediante el complemento de Schur como la desigualdad matricial lineal
+se denomina \textit{brecha de dualidad} asociada al par
+$(x, Z)$~\parencite[p.~64]{vandenbergheSemidefiniteProgramming1996}.
+
+Si se denotan por
+\begin{gather*}
+    p^\star = \inf\bigl\{\, c^\top x \;:\; F(x) \succeq 0 \,\bigr\}, \\
+    d^\star = \sup\bigl\{\, {-\operatorname{Tr}(F_0 Z)} \;:\; Z \succeq 0,\;
+    \operatorname{Tr}(F_i Z) = c_i,\; i = 1, \ldots, m \,\bigr\}
+\end{gather*}
+los valores óptimos del primal y del dual, respectivamente, de lo anterior se desprende que
+$d^\star \leq p^\star$~\parencite[p.~64]{vandenbergheSemidefiniteProgramming1996}. Esta
+propiedad se conoce como \textit{dualidad débil}~\parencite[p.~225]{boydConvexOptimization2004}.
+
+En programación lineal ambos valores óptimos coinciden siempre, salvo en el caso patológico en
+que ninguno de los dos problemas es factible. En programación semidefinida, en cambio, esta
+igualdad no está garantizada: existen programas en los que el primal y el dual son factibles y,
+aun así, $p^\star \neq d^\star$~\parencite[pp.~64--65]{vandenbergheSemidefiniteProgramming1996}.
+Una condición suficiente para que $p^\star = d^\star$, situación denominada \textit{dualidad
+fuerte}~\parencite[p.~226]{boydConvexOptimization2004}, es que alguno de los dos problemas sea
+\textit{estrictamente factible}; es decir, que exista un $x$ con $F(x) \succ 0$, o bien una
+matriz $Z \succ 0$ que cumpla las restricciones de igualdad del dual. Si ambos problemas son
+estrictamente factibles, además, los dos alcanzan su valor
+óptimo~\parencite[pp.~64--65]{vandenbergheSemidefiniteProgramming1996}. El símbolo $\succ$
+indica que la matriz es definida positiva: la forma cuadrática $z^\top F(x)\, z$ (o
+$z^\top Z z$) es estrictamente positiva para todo $z \neq 0$. Este requisito de factibilidad estricta es la
+versión para programación semidefinida de la \textit{condición de Slater}, una de las
+calificaciones de restricciones más simples de la optimización
+convexa~\parencite[pp.~226 y 265--266]{boydConvexOptimization2004}.
+
+Finalmente, cuando ambos problemas alcanzan su óptimo y $p^\star = d^\star$, la brecha de
+dualidad en el óptimo es nula, $\operatorname{Tr}\bigl(F(x) Z\bigr) = 0$. Como $F(x)$ y $Z$ son
+semidefinidas positivas, esto implica que $Z F(x) = 0$, condición conocida como \textit{holgura
+complementaria}. Así, bajo factibilidad estricta del primal y del dual, $x$ es óptimo si y solo
+si existe una matriz $Z$ tal que
+\begin{equation}
+    \label{eq:sdp_optimalidad}
+    F(x) \succeq 0, \qquad
+    Z \succeq 0, \qquad
+    \operatorname{Tr}(F_i Z) = c_i,\; i = 1, \ldots, m, \qquad
+    Z F(x) = 0
+\end{equation}
+\parencite[p.~65]{vandenbergheSemidefiniteProgramming1996}.
+
+\subsection{Métodos de punto interior}
+\label{subsec:sdp_punto_interior}
+
+Los métodos de punto interior generan iterados en el interior de la región factible. Para
+describirlos se supone que tanto el primal como el dual son estrictamente factibles y que las
+matrices $F_1, \ldots, F_m$ son linealmente
+independientes~\parencite[p.~70]{vandenbergheSemidefiniteProgramming1996}.
+
+\subsubsection*{Función barrera}
+
+La herramienta básica es una \textit{función barrera} para la restricción $F(x) \succeq 0$:
+\begin{equation}
+    \label{eq:sdp_barrera}
+    \phi(x) =
+    \begin{cases}
+        \log\det F(x)^{-1} & \text{si } F(x) \succ 0, \\
+        +\infty            & \text{en otro caso.}
+    \end{cases}
+\end{equation}
+Esta función es finita solo en el interior de la región factible y crece sin cota a medida que
+$x$ se acerca a su frontera, donde $F(x)$ deja de ser definida positiva. Además, es
+estrictamente convexa en ese interior y, en la práctica, es casi plana lejos de la frontera y
+aumenta bruscamente cerca de ella~\parencite[p.~70]{vandenbergheSemidefiniteProgramming1996}.
+Cuando $F(x)$ es diagonal, es decir, cuando el problema es un programa lineal con restricciones
+$a_i^\top x + b_i \geq 0$, la función~\eqref{eq:sdp_barrera} se reduce a la barrera logarítmica
+habitual $-\sum_i \log(a_i^\top x + b_i)$~\parencite[p.~71]{vandenbergheSemidefiniteProgramming1996}.
+La Figura~\ref{fig:sdp_barrera} muestra este comportamiento en un ejemplo de una variable.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[xscale=5, yscale=0.85]
+        \draw[->] (-0.08,0) -- (1.12,0) node[below] {$x$};
+        \draw[->] (0,-0.2) -- (0,5.6) node[left] {$\phi(x)$};
+        \draw[thick, domain=0.012:0.988, samples=120, smooth]
+            plot (\x, {-ln(\x) - ln(1-\x)});
+        \draw[dashed] (1,0) -- (1,5.4);
+        \node[below] at (0,0) {$0$};
+        \node[below] at (1,0) {$1$};
+        \node[below] at (0.5,0) {$\tfrac{1}{2}$};
+        \draw (0.5,0.04) -- (0.5,-0.04);
+    \end{tikzpicture}
+    \caption[Función barrera de una desigualdad matricial lineal.]{Función barrera
+    $\phi(x) = \log\det F(x)^{-1}$ para $F(x) = \operatorname{diag}(x,\, 1-x)$, cuya región
+    factible es $[0, 1]$. Elaboración propia.}
+    \label{fig:sdp_barrera}
+\end{figure}
+
+\subsubsection*{Trayectoria central}
+
+A partir de la barrera se define la \textit{trayectoria central}. Para cada valor $\eta > 0$ de la
+brecha de dualidad, se considera el par $(x^\star(\eta), Z^\star(\eta))$ que, entre todos los
+pares estrictamente factibles con brecha igual a $\eta$, minimiza la barrera primal-dual
+$-\log\det F(x) - \log\det Z$. Este par queda caracterizado por
+\begin{equation}
+    \label{eq:sdp_trayectoria_central}
+    F(x) \succ 0, \qquad
+    Z \succ 0, \qquad
+    \operatorname{Tr}(F_i Z) = c_i,\; i = 1, \ldots, m, \qquad
+    Z F(x) = \frac{\eta}{n} I
+\end{equation}
+\parencite[p.~75]{vandenbergheSemidefiniteProgramming1996}, es decir, por las condiciones de
+optimalidad~\eqref{eq:sdp_optimalidad} con la holgura complementaria relajada a
+$Z F(x) = (\eta/n) I$. A medida que $\eta \to 0$, el par central converge a un par
+óptimo del primal y del dual~\parencite[p.~75]{vandenbergheSemidefiniteProgramming1996}. Casi
+todos los métodos de punto interior se aproximan al óptimo siguiendo esta trayectoria, ya sea
+regresando a ella periódicamente o manteniendo acotada la distancia a
+ella~\parencite[p.~74]{vandenbergheSemidefiniteProgramming1996}.
+
+\subsubsection*{Esquema general}
+
+Los métodos primal-dual parten de un par $(x, Z)$ estrictamente factible y repiten los siguientes
+pasos~\parencite[p.~77]{vandenbergheSemidefiniteProgramming1996}:
+\begin{enumerate}
+    \item Calcular una dirección de búsqueda $\delta x$ para el primal y una dirección
+    $\delta Z$ para el dual, resolviendo un sistema de ecuaciones lineales.
+    \item Elegir las longitudes de paso en cada dirección, de modo que el nuevo par siga siendo
+    estrictamente factible y se aproxime al óptimo.
+    \item Actualizar $x$ y $Z$.
+\end{enumerate}
+El proceso se detiene cuando la brecha de dualidad es menor que una tolerancia prefijada. Las
+distintas variantes difieren principalmente en una matriz de escalamiento que aparece en el
+sistema lineal del primer paso. Entre las más conocidas están la dirección de Nesterov y Todd
+(NT), la propuesta de forma independiente por Helmberg et al.\ y por Kojima, Shindoh y Hara
+(conocida como HKM) y la de Alizadeh, Haeberly y
+Overton~(AHO)~\parencite[pp.~80--81]{vandenbergheSemidefiniteProgramming1996}. Existen
+además variantes que no requieren un punto inicial
+factible~\parencite[p.~88]{vandenbergheSemidefiniteProgramming1996}.
+
+Los principales solvers de punto interior son implementaciones de este esquema. CSDP implementa
+una variante predictor-corrector del método de \textcite{helmbergInteriorPointMethodSemidefinite1996}
+\parencite{borchersCSDPLibrarySemidefinite1999}, con la dirección HKM, y admite bloques diagonales
+para representar variables de programación lineal~\parencite[p.~412]{mittelmannIndependentBenchmarkingSDP2003a}.
+SDPT3 utiliza un método predictor-corrector de seguimiento de trayectoria que no requiere un punto
+inicial factible, con las direcciones HKM o NT~\parencite{tohImplementationUsageSDPT32012a}.
+SDPA implementa un método primal-dual predictor-corrector de tipo Mehrotra que tampoco requiere un
+punto inicial factible, permite elegir entre las direcciones HKM, NT y AHO, y aprovecha la
+estructura de bloques y la dispersión de las matrices de
+datos~\parencite[p.~411]{mittelmannIndependentBenchmarkingSDP2003a}. SeDuMi~\parencite{sturmUSINGSEDUMI1022001}
+utiliza la dirección NT y resuelve el problema de inicialización mediante la técnica de
+embebido autodual (\textit{self-dual embedding}). Además, actualiza los iterados en forma
+de producto, lo que le permite entregar soluciones de alta
+precisión~\parencite[pp.~411--412 y 421]{mittelmannIndependentBenchmarkingSDP2003a}.
+
+\subsubsection*{Número de iteraciones y costo por iteración}
+
+En el peor caso, el número de iteraciones necesarias para alcanzar una precisión dada crece como
+$O(\sqrt{n})$~\parencite[p.~84]{vandenbergheSemidefiniteProgramming1996}. En la práctica, el
+comportamiento es mucho mejor: para una amplia variedad de problemas y tamaños, estos métodos
+requieren típicamente entre 5 y 50 iteraciones, número que puede considerarse casi independiente
+del tamaño del problema~\parencite[pp.~84 y 91]{vandenbergheSemidefiniteProgramming1996}.
+
+La parte dominante de cada iteración es la resolución del sistema
+lineal que entrega las direcciones de búsqueda, con $m + n(n+1)/2$ incógnitas. Si las matrices
+$F_i$ no tienen estructura, este sistema puede resolverse en $O(m^2 n^2)$
+operaciones~\parencite[pp.~77 y 89]{vandenbergheSemidefiniteProgramming1996}. Si $F(x)$ es diagonal por bloques,
+con la notación de la Sección~\ref{subsec:sdp_bloques}, el término $n(n+1)/2$ se reemplaza por
+$\sum_{\ell=1}^{L} n_\ell(n_\ell+1)/2$, que suele ser un orden de magnitud menor. En el caso
+extremo de un programa lineal, en que todos los bloques son de tamaño uno, el costo baja a
+$O(m^2 n)$. Se puede ahorrar aún más aprovechando la estructura interna de cada bloque, por
+ejemplo su dispersión~\parencite[p.~89]{vandenbergheSemidefiniteProgramming1996}.
+
+\subsection{Otros métodos de solución}
+\label{subsec:sdp_otros_metodos}
+
+\subsubsection*{Escalamiento dual}
+
+El método de escalamiento dual (\textit{dual-scaling}), implementado en DSDP, también es un método
+de punto interior, pero calcula sus direcciones de búsqueda usando solo la matriz de holgura de la
+desigualdad matricial lineal, que en la notación de esta sección es $F(x)$. DSDP llama dual a esa
+forma del problema, por lo que el nombre del método se refiere a lo que aquí es el primal. En cada
+iteración, el método aplica el método de Newton a las condiciones de la trayectoria central
+expresando la variable matricial del otro problema como un múltiplo de $F(x)^{-1}$, y obtiene la
+dirección de búsqueda resolviendo un sistema lineal con una matriz de tamaño $m \times m$ cuyas
+entradas son
+$\operatorname{Tr}\bigl(F_i F(x)^{-1} F_j F(x)^{-1}\bigr)$~\parencite[p.~16:4]{bensonAlgorithm875DSDP5software2008}.
+Esa variable matricial no se necesita para calcular la dirección y, salvo que se solicite, DSDP no
+la construye, lo que caracteriza al algoritmo y a su
+rendimiento~\parencite[pp.~16:4--16:5]{bensonAlgorithm875DSDP5software2008}. Para formar la
+matriz del sistema, DSDP aprovecha el rango bajo de las matrices de datos, en lugar de su
+dispersión, que es la estructura que explotan otros solvers de punto
+interior~\parencite[p.~16:5]{bensonAlgorithm875DSDP5software2008}. Entre sus características
+se cuentan requisitos de memoria relativamente bajos para un método de punto interior, la
+posibilidad de partir de puntos factibles o no factibles y la entrega de certificados de
+infactibilidad~\parencite[p.~16:1]{bensonAlgorithm875DSDP5software2008}.
+
+\subsubsection*{Lagrangiano aumentado}
+
+En los métodos de punto interior, formar, almacenar y factorizar la matriz de tamaño $m \times m$
+del sistema lineal se vuelve prohibitivo cuando el número de restricciones $m$ es muy
+grande~\parencite[p.~1738]{zhaoNewtonCGAugmentedLagrangian2010a}. Los métodos de Lagrangiano
+aumentado evitan ese sistema. Para el problema~\eqref{eq:sdp_vandenberghe}, con un parámetro de
+penalización $\sigma > 0$, la función de Lagrange aumentada es
 \[
-    \begin{bmatrix}
-        I & L^\top x\\
-        x^\top L & -q^\top x - r
-    \end{bmatrix}\succeq 0,
+    L_\sigma(x, Z) = c^\top x + \frac{1}{2\sigma}\Bigl(
+    \bigl\|\Pi_{+}\bigl(Z - \sigma F(x)\bigr)\bigr\|_F^2 - \|Z\|_F^2 \Bigr),
 \]
-lo que permite escribir problemas cuadráticos convexos como
-\acrshort{sdp} \parencite{vandenbergheSemidefiniteProgramming1996}. En \acrshort{sdp}, esta idea
-se amplía al permitir matrices completas o por bloques, lo que hace posible capturar
-interacciones entre variables mediante términos fuera de la diagonal. Esta capacidad
-explica su relevancia en áreas como control robusto, optimización combinatoria, diseño
-estructural y relajaciones convexas de problemas no convexos
-\parencite{vandenbergheSemidefiniteProgramming1996,faresROBUSTCONTROLSEQUENTIAL2002,borchersSDPLIB12Library1999}.
+donde $\|\cdot\|_F$ es la norma de Frobenius y $\Pi_{+}$ denota la proyección sobre el conjunto de
+matrices simétricas semidefinidas positivas. El método alterna entre minimizar $L_\sigma$ respecto
+de $x$ y actualizar la variable dual mediante una proyección,
+\[
+    x_{k+1} \in \operatorname*{arg\,min}_{x} L_{\sigma_k}(x, Z_k), \qquad
+    Z_{k+1} = \Pi_{+}\bigl(Z_k - \sigma_k F(x_{k+1})\bigr)
+\]
+\parencite[pp.~1737--1738]{zhaoNewtonCGAugmentedLagrangian2010a}. Como la proyección $\Pi_{+}$
+no es dos veces diferenciable, los subproblemas en $x$ no admiten el método de Newton clásico;
+\textcite{zhaoNewtonCGAugmentedLagrangian2010a} los resuelven con un método de Newton semisuave
+cuyas ecuaciones lineales se resuelven de forma iterativa con gradiente
+conjugado~\parencite[p.~1739]{zhaoNewtonCGAugmentedLagrangian2010a}. El
+método está orientado a problemas con $m$ grande, de hasta algunos millones, y $n$ moderado, de
+hasta unos $5000$, que resuelve con precisión moderada de forma mucho más eficiente que las
+alternativas con las que se comparó~\parencite[pp.~1738--1739]{zhaoNewtonCGAugmentedLagrangian2010a}.
 
-Desde esta perspectiva, la diferencia esencial respecto de la programación lineal no está
-en abandonar la convexidad, sino en reemplazar restricciones de no negatividad sobre
-vectores por restricciones de semidefinitud positiva sobre matrices. Aunque esta restricción
-es no lineal y no suave, el conjunto factible conserva estructura convexa
-\parencite{vandenbergheSemidefiniteProgramming1996}. Esta combinación de expresividad y
-convexidad ha permitido extender a \acrshort{sdp} muchas ideas algorítmicas desarrolladas
-originalmente para programación lineal, en particular los métodos de punto interior
-primal-dual.
+SDPNAL+ extiende este enfoque a problemas con cotas sobre las entradas de la variable matricial y
+restricciones lineales de desigualdad. Su algoritmo tiene dos fases: la primera aplica un método
+de multiplicadores con direcciones alternadas (ADMM) para obtener una solución de precisión
+moderada, y la segunda usa esa solución como punto de partida de un método de Lagrangiano
+aumentado cuyos subproblemas se resuelven con el método de Newton semisuave y gradiente
+conjugado~\parencite[p.~3]{sunSDPNALMatlabSoftware2019}.
 
-\subsection{Métodos de solución para programación semidefinida}
-\label{sec:solvers_sdp}
+\subsection{Comparación entre familias de métodos}
+\label{subsec:sdp_comparacion_metodos}
 
-El desarrollo de solvers para \acrshort{sdp} está estrechamente ligado a la estructura cónica del
-problema. Aunque la formulación es convexa, resolver instancias grandes puede ser costoso por
-la presencia de variables matriciales, restricciones de semidefinitud y sistemas lineales densos o
-mal condicionados. Por ello, la literatura y el software especializado han explorado distintas
-familias algorítmicas, cada una con ventajas y limitaciones según el tamaño, la densidad y la
-estructura de la instancia.
+Las familias descritas ofrecen compromisos distintos entre precisión, uso de memoria y tamaño de
+los problemas que pueden abordar (Tabla~\ref{tab:sdp_familias}). Los métodos primal-dual de punto
+interior son los que entregan las soluciones más
+precisas~\parencite[p.~419]{mittelmannIndependentBenchmarkingSDP2003a}. Según los autores de
+SDPT3, sin embargo, un solver que forma la matriz del sistema de Newton y lo resuelve con métodos
+directos difícilmente compite con otras alternativas en problemas de gran escala; para SDPT3
+estiman que se obtienen soluciones razonablemente precisas hasta alrededor de mil restricciones
+con matrices de orden cercano a mil~\parencite[p.~414]{mittelmannIndependentBenchmarkingSDP2003a}.
+Incluso dentro de esta familia, el rendimiento depende de la estructura: SeDuMi se beneficia de
+problemas con muchos bloques pequeños, pero se vuelve lento y consume demasiada memoria cuando
+hay una variable matricial grande sin estructura de bloques, caso en que CSDP se desempeña
+especialmente bien~\parencite[pp.~412 y 421]{mittelmannIndependentBenchmarkingSDP2003a}.
 
-La familia más clásica corresponde a los métodos de punto interior primal-dual. Estos métodos
-generalizan ideas de programación lineal al cono semidefinido positivo y construyen una secuencia
-de iterados que se aproximan simultáneamente a la factibilidad primal, factibilidad dual y
-optimalidad \parencite{helmbergInteriorPointMethodSemidefinite1996,nesterovPrimalDualInteriorPointMethods1998}.
-Su fortaleza principal es la robustez numérica y la buena precisión en instancias
-pequeñas y medianas. Sin embargo, cada iteración suele requerir la formación y resolución de un
-problema matricial asociado a las restricciones, cuyo costo puede crecer rápidamente con el número
-de restricciones y el tamaño de los bloques semidefinidos
-\parencite{vandenbergheSemidefiniteProgramming1996}.
+DSDP, al no construir la variable matricial del otro problema y aprovechar el rango bajo y la
+dispersión de los datos, reduce el uso de memoria y puede ganar eficiencia en problemas con esa
+estructura; en los problemas más grandes del DIMACS Challenge tuvo un rendimiento comparable al de
+CSDP~\parencite[pp.~413 y 421]{mittelmannIndependentBenchmarkingSDP2003a}. Los métodos de
+Lagrangiano aumentado como SDPNAL+ apuntan a problemas con un número de restricciones demasiado
+grande para los métodos de punto interior, a cambio de una precisión
+moderada~\parencite[pp.~1738--1739]{zhaoNewtonCGAugmentedLagrangian2010a}. Fuera de estas familias
+existen métodos de primer orden y de factorización de bajo rango, como el de Burer y Monteiro o el
+método espectral de haces de Helmberg, que no usan información de segundo orden y han resultado
+eficaces sobre todo en problemas combinatorios de gran escala, con soluciones
+aproximadas~\parencite[pp.~410 y 416--420]{mittelmannIndependentBenchmarkingSDP2003a}.
+Ningún método domina en todos los casos: en la comparación del DIMACS Challenge, muchos de los
+solvers resultaron exitosos, o incluso los mejores, en una subclase particular de
+problemas~\parencite[p.~422]{mittelmannIndependentBenchmarkingSDP2003a}.
 
-Una segunda familia corresponde a los métodos de punto interior de escalamiento dual
-(\textit{dual-scaling}), implementados por ejemplo en DSDP. Estos métodos trabajan
-principalmente desde el problema dual y buscan reducir los requerimientos de memoria frente a
-ciertas variantes primal-dual completas. En lugar de construir iterados primal y dual con el mismo
-nivel de detalle, explotan la estructura dual para obtener pasos más económicos en problemas
-donde el sistema asociado sería demasiado costoso
-\parencite{bensonSolvingLargeScaleSparse2000,bensonAlgorithm875DSDP5software2008}.
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}
+                                 >{\raggedright\arraybackslash}p{2.1cm}
+                                 >{\raggedright\arraybackslash}X
+                                 >{\raggedright\arraybackslash}X}
+        \toprule
+        Familia & Solvers & Fortalezas & Limitaciones \\
+        \midrule
+        Punto interior primal-dual & CSDP, SDPA, SDPT3, SeDuMi
+            & Soluciones de alta precisión en pocas iteraciones; aprovechan bloques y dispersión
+            & Memoria y tiempo por iteración crecen con $m$ y con el tamaño de los bloques \\
+        Escalamiento dual & DSDP
+            & Bajo uso de memoria; aprovecha el rango bajo de los datos; no construye la variable
+              matricial del otro problema
+            & Sigue requiriendo resolver un sistema de tamaño $m \times m$ en cada iteración \\
+        Lagrangiano aumentado & SDPNAL+
+            & Escala a problemas con $m$ muy grande y $n$ moderado
+            & Precisión moderada \\
+        \bottomrule
+    \end{tabularx}
+    \caption[Comparación entre familias de métodos para programación semidefinida.]{Comparación
+    entre las familias de métodos a las que pertenecen los solvers considerados. Elaboración
+    propia a partir de \textcite{vandenbergheSemidefiniteProgramming1996},
+    \textcite{mittelmannIndependentBenchmarkingSDP2003a},
+    \textcite{bensonAlgorithm875DSDP5software2008} y
+    \textcite{zhaoNewtonCGAugmentedLagrangian2010a}.}
+    \label{tab:sdp_familias}
+\end{table}
 
-Una tercera línea corresponde a los métodos de Lagrangiano aumentado y Newton-CG. Estos
-métodos son especialmente relevantes para instancias de mayor escala, donde formar y factorizar
-sistemas densos puede ser prohibitivo. Su idea general es resolver una secuencia de subproblemas
-regularizados, usando pasos de Newton aproximados o métodos
-iterativos \parencite{zhaoNewtonCGAugmentedLagrangian2010a}. En comparación con
-los métodos de punto interior, suelen sacrificar parte de la precisión de alta tolerancia a cambio
-de una mejor escalabilidad en problemas grandes
-\parencite{zhaoNewtonCGAugmentedLagrangian2010a,sunSDPNALMatlabSoftware2019}.
+\subsection{Infactibilidad y criterios de término}
+\label{subsec:sdp_infactibilidad}
 
-\subsection{Solvers considerados}
-\label{subsec:solvers_considerados}
+El primal o el dual de un programa semidefinido pueden ser infactibles. La infactibilidad del
+primal se demuestra con una matriz $W \succeq 0$ que cumpla
+\[
+    \operatorname{Tr}(F_i W) = 0, \quad i = 1, \ldots, m, \qquad \operatorname{Tr}(F_0 W) < 0,
+\]
+ya que para cualquier $x$ se tendría $\operatorname{Tr}\bigl(F(x) W\bigr) = \operatorname{Tr}(F_0
+W) < 0$, lo que es imposible si $F(x) \succeq 0$. Del mismo modo, la infactibilidad del dual se
+demuestra con un vector $d \in \mathbb{R}^m$ que cumpla
+\[
+    \sum_{i=1}^{m} d_i F_i \succeq 0, \qquad c^\top d < 0,
+\]
+ya que para cualquier $Z$ dual factible se tendría
+$\operatorname{Tr}\bigl(\sum_i d_i F_i Z\bigr) = c^\top d < 0$. Estos objetos se denominan
+\textit{certificados de infactibilidad}, y su existencia está ligada a los teoremas de
+alternativas para desigualdades matriciales
+lineales~\parencite[pp.~270--271]{boydConvexOptimization2004}. Solvers como DSDP y SDPT3
+entregan certificados aproximados de este tipo cuando detectan que un problema es
+infactible~\parencites[p.~16:1]{bensonAlgorithm875DSDP5software2008}[sec.~3]{tohImplementationUsageSDPT32012a}.
+Sin embargo, en programación semidefinida un problema puede ser infactible sin que exista un
+certificado, situación llamada \textit{infactibilidad débil}. En esos casos el solver suele
+detenerse por pasos demasiado cortos o por falta de progreso~\parencite[sec.~3]{tohImplementationUsageSDPT32012a}.
 
-A partir de las familias algorítmicas descritas, existen numerosas implementaciones de software
-para resolver problemas de \acrshort{sdp}. Esta sección no pretende ser exhaustiva, sino describir
-los solvers considerados en este trabajo, todos basados en métodos de punto interior primal-dual,
-junto con sus principales características y diferencias.
+Las soluciones que entrega un solver cumplen las restricciones y la holgura complementaria solo
+de forma aproximada. Para decidir cuándo detenerse, SDPT3 mide tres errores relativos que, en la
+notación de esta sección, son
+\begin{gather*}
+    r_{\mathrm{p}} = \frac{\| F(x) - S \|_F}{1 + \|F_0\|_F}, \qquad
+    r_{\mathrm{d}} = \frac{\bigl(\sum_{i=1}^{m} (\operatorname{Tr}(F_i Z) - c_i)^2\bigr)^{1/2}}{1 + \|c\|}, \\
+    r_{\mathrm{g}} = \frac{\bigl|c^\top x + \operatorname{Tr}(F_0 Z)\bigr|}
+    {1 + |c^\top x| + |\operatorname{Tr}(F_0 Z)|},
+\end{gather*}
+donde $S \succeq 0$ es la matriz de holgura que el método mantiene para la desigualdad
+matricial lineal. El solver se detiene con éxito cuando $\max\{r_{\mathrm{p}}, r_{\mathrm{d}},
+r_{\mathrm{g}}\}$ es menor que una tolerancia, y también se detiene si detecta indicios de
+infactibilidad, progreso lento, problemas numéricos o pasos demasiado
+pequeños~\parencite[sec.~3.3]{tohImplementationUsageSDPT32012a}.
 
-\subsubsection{SDPT3}
-\label{subsec:solver_sdpt3}
+\subsection{Dificultad numérica}
+\label{subsec:sdp_dificultad}
 
-SDPT3 fue desarrollado por Kim-Chuan Toh, Michael J. Todd y Reha H. Tütüncü. Es uno de los
-solvers más usados dentro de la familia de métodos de punto interior primal-dual y está
-implementado en MATLAB. Resuelve problemas semidefinidos, cuadráticos y lineales cónicos. Su
-versión 4.0 incorpora direcciones predictor-corrector y variantes HKM/NT, por lo que se ha
-convertido en una referencia habitual para experimentos comparativos en \acrshort{sdp}
-\parencite{tohImplementationUsageSDPT32012a}.
+En la práctica, los algoritmos para programación semidefinida alcanzan menor precisión que los
+de programación lineal~\parencite[p.~105]{weiNumericalStabilityLinear}. Una causa es que, al
+acercarse al óptimo, el producto de las matrices primal y dual tiende a cero aunque algunas de
+sus entradas no sean pequeñas, lo que produce errores de cancelación; además, ambas matrices se
+vuelven mal condicionadas, por lo que el cálculo de sus inversas, necesario para obtener las
+direcciones de búsqueda, pierde confiabilidad~\parencite[pp.~105--106]{weiNumericalStabilityLinear}.
 
-\subsubsection{SeDuMi}
-\label{subsec:solver_sedumi}
+Otra fuente de dificultad es la falta de \textit{complementariedad estricta}. Un par óptimo
+$(x^\star, Z^\star)$ es estrictamente complementario si $F(x^\star) + Z^\star \succ 0$. Cuando no
+existe un par con esta propiedad, la \textit{brecha de complementariedad estricta},
+$g = n - \operatorname{rank} F(x^\star) - \operatorname{rank} Z^\star$ evaluada en un par óptimo
+de rango máximo, es positiva~\parencite[p.~109]{weiNumericalStabilityLinear}. En esos problemas,
+el jacobiano de las condiciones de optimalidad es singular en el óptimo y los métodos primal-dual
+de punto interior suelen presentar convergencia lenta, de tasa lineal, y baja precisión en la
+solución~\parencite[p.~108]{weiNumericalStabilityLinear}. \textcite{weiNumericalStabilityLinear}
+propone un procedimiento para generar instancias con una brecha de complementariedad estricta
+prescrita y muestra empíricamente que el tamaño de esa brecha se correlaciona con el número de
+iteraciones de SDPT3, y que una brecha grande combinada con el incumplimiento de la condición de
+Slater se correlaciona con la pérdida de precisión~\parencite[p.~108]{weiNumericalStabilityLinear}.
+En cambio, no encuentra correlación entre la brecha y otras medidas propuestas para explicar el
+número de iteraciones, como una medida geométrica agregada o el número de condición de Renegar,
+que parecen estar más relacionadas con la distancia a la
+infactibilidad~\parencite[pp.~107--108 y 127]{weiNumericalStabilityLinear}.
 
-SeDuMi fue desarrollado originalmente por Jos F. Sturm. También pertenece a la familia de
-métodos de punto interior primal-dual, pero fue diseñado como un solver más general para
-optimización sobre conos simétricos. Además de programación semidefinida, soporta conos de
-segundo orden y programación lineal. Su uso se popularizó por la integración con MATLAB y por
-su capacidad de resolver formulaciones cónicas expresadas desde lenguajes de modelamiento. En
-comparación con SDPT3, comparte el enfoque primal-dual, pero difiere en la implementación de
-las direcciones de búsqueda y en el tratamiento numérico del sistema cónico
-\parencite{sturmUSINGSEDUMI1022001}.
+Las colecciones de prueba usadas en la práctica contienen instancias de este tipo. En el
+\textit{Seventh DIMACS Implementation Challenge}, cada familia de problemas incluía desde
+instancias que se resuelven de forma rutinaria hasta otras en el límite o más allá de la
+capacidad de los solvers disponibles; algunas, como \texttt{copo68}, \texttt{fap25} y
+\texttt{fap36}, resultaron prácticamente irresolubles, y en otras los resultados de los distintos
+solvers diferían tanto que no fue posible asegurar que se hubieran
+resuelto~\parencite[p.~419]{mittelmannIndependentBenchmarkingSDP2003a}.
 
-\subsubsection{SDPA}
-\label{subsec:solver_sdpa}
+\section{Evaluación comparativa de solvers SDP}
+\label{sec:benchmarking_sdp}
 
-SDPA fue desarrollado por el grupo del proyecto SDPA, asociado a Makoto Yamashita, Katsuki
-Fujisawa, Masakazu Kojima y colaboradores. Es un solver especializado para programación
-semidefinida desarrollado en C++. También se basa en métodos de punto interior primal-dual,
-pero se distingue por estar estrechamente asociado al formato SDPA y por ofrecer ejecutables
-independientes del entorno MATLAB. Esta característica lo vuelve útil en pipelines experimentales
-automatizados, donde se requiere ejecutar muchas instancias desde archivos de entrada
-estandarizados \parencite{yamashitaLatestDevelopmentsSDPA2012,fujisawaHighperformanceSoftwarePackage2010,SDPAOfficialPage}.
+La evaluación comparativa (\textit{benchmarking}) de solvers de programación semidefinida tiene
+como principal referencia el \textit{Seventh DIMACS Implementation Challenge on Semidefinite and
+Related Optimization Problems}. \textcite{mittelmannIndependentBenchmarkingSDP2003a} evaluó todos
+los códigos enviados a ese desafío, diez en total, sobre sus cincuenta problemas de prueba,
+agrupados en doce categorías, ejecutándolos en una misma plataforma para que los resultados fueran
+comparables~\parencite[pp.~407 y 410]{mittelmannIndependentBenchmarkingSDP2003a}. Para medir la
+calidad de las soluciones, el desafío definió seis medidas de error relativas: la infactibilidad
+de las restricciones lineales del primal y del dual, la violación de la semidefinitud de cada
+variable medida por su menor valor propio, y dos versiones de la brecha de dualidad relativa,
+una calculada con los valores objetivo y otra con el producto interno entre las matrices primal
+y dual~\parencite[p.~409]{mittelmannIndependentBenchmarkingSDP2003a}. Estas medidas son análogas
+a las de la Sección~\ref{subsec:sdp_infactibilidad} y se siguen usando para reportar la
+precisión de los solvers~\parencite{PlatoasueduFtpSparse_sdphtml}.
 
-\subsubsection{CSDP}
-\label{subsec:solver_csdp}
+Los resultados del desafío no identificaron un solver superior en general. Los códigos se
+dividieron en métodos primal-dual de punto interior, diseñados para problemas pequeños y
+medianos, y códigos para problemas de gran escala que entregan soluciones
+aproximadas~\parencite[p.~410]{mittelmannIndependentBenchmarkingSDP2003a}. Entre los primeros,
+SDPA y SeDuMi resultaron confiables y razonablemente eficientes en problemas pequeños y medianos,
+mientras que CSDP y SDPT3 lograron resolver problemas relativamente
+grandes~\parencite[p.~422]{mittelmannIndependentBenchmarkingSDP2003a}. Entre los métodos de primer
+orden, el autor no pudo declarar un ganador entre el método de Burer, Monteiro y Zhang y el
+método espectral de haces, ya que cada uno fue superior en categorías
+distintas~\parencite[pp.~420--421]{mittelmannIndependentBenchmarkingSDP2003a}.
 
-CSDP fue desarrollado por Brian Borchers. Es una biblioteca escrita en C para resolver programas
-semidefinidos mediante métodos de punto interior. Su diseño enfatiza portabilidad y uso como
-biblioteca o ejecutable externo, lo que permite integrarlo en flujos de benchmarking sin depender
-de entornos interactivos \parencite{borchersCSDPLibrarySemidefinite1999}.
+Mittelmann mantiene además una comparación de solvers que se actualiza periódicamente. En su
+versión del 25 de abril de 2026, compara siete solvers, entre ellos CSDP, SDPA, SDPT3, SeDuMi y
+MOSEK, sobre 75 problemas provenientes de su propia colección, del DIMACS Challenge y de la
+colección de PENNON, con un límite de 40\,000 segundos por problema. Para cada solver informa el
+número de problemas resueltos y resume los tiempos mediante una media geométrica desplazada y
+escalada, en la que el solver más rápido recibe el valor~1~\parencite{PlatoasueduFtpSparse_sdphtml}.
 
+\textcite{dolanBenchmarkingOptimizationSoftware2002} señalan que los promedios o totales de una
+métrica pueden quedar dominados por unos pocos problemas difíciles y obligan a descartar los
+problemas en que algún solver falló, lo que sesga los resultados en contra de los solvers más
+robustos; asignar una penalización a las fallas evita descartarlas, pero exige elegir su valor de
+forma subjetiva; y los rankings por problema pierden la información sobre la magnitud de las
+diferencias~\parencite[sec.~1]{dolanBenchmarkingOptimizationSoftware2002}. Como alternativa
+proponen los \textit{perfiles de rendimiento}. Si $t_{j,s}$ es el tiempo que el solver $s$ tarda
+en resolver el problema $j$ de una colección $\mathcal{J}$, se define la razón
+$\pi_{j,s} = t_{j,s} / \min_{s'} t_{j,s'}$, a la que se asigna un valor grande fijo cuando $s$ no
+resuelve $j$, y el perfil del solver $s$ es la función de distribución
+\[
+    \rho_s(\tau) = \frac{\bigl|\{\, j \in \mathcal{J} \;:\; \pi_{j,s} \leq \tau \,\}\bigr|}
+    {|\mathcal{J}|},
+\]
+que indica la fracción de problemas en que $s$ es, a lo más, $\tau$ veces más lento que el
+mejor solver. En particular, $\rho_s(1)$ es la fracción de problemas en que $s$ es el más
+rápido~\parencite[sec.~2]{dolanBenchmarkingOptimizationSoftware2002}. Los mismos autores advierten
+que preferir los solvers con perfiles más altos solo se justifica si la colección es
+suficientemente grande y representativa de los problemas que interesan en la
+práctica~\parencite[sec.~2]{dolanBenchmarkingOptimizationSoftware2002}.
 
+Tanto las medias geométricas como los perfiles de rendimiento resumen el comportamiento de cada
+solver sobre la colección completa. Indican qué solver es mejor en promedio o en qué fracción de
+los problemas, pero no qué características de una instancia favorecen a cada uno, y sus
+conclusiones dependen de la composición de la colección. Esta es la limitación que aborda el
+análisis del espacio de instancias, presentado en la sección siguiente.
 
-\subsection{Librerías de instancias}
-\label{subsec:librerias_instancias_sdp}
-
-\paragraph{SDPLIB.}
-\label{subsec:benchmark_sdplib}
-
-SDPLIB es una de las bibliotecas clásicas para la evaluación de solvers de programación
-semidefinida. Fue propuesta por Brian Borchers con el objetivo de reunir problemas de prueba en
-un formato estándar y estimular el desarrollo de software especializado para \acrshort{sdp}. La
-versión 1.2 contiene 92 problemas provenientes de distintas aplicaciones, incluyendo diseño de
-estructuras tipo \textit{truss}, ingeniería de control y relajaciones semidefinidas de problemas de
-optimización combinatoria. Por su diversidad y por el uso de una representación estandarizada,
-SDPLIB se convirtió en una referencia habitual para comparar solvers y verificar implementaciones
-en instancias de tamaño pequeño y mediano \parencite{borchersSDPLIB12Library1999}.
 
 \newpage
-\subsection{Instancias provenientes de benchmarks para programación semidefinida}
-\label{sec:benchmarks_sdp}
-
-\paragraph{Benchmarks de Hans Mittelmann.}
-\label{subsec:benchmark_mittelmann}
-
-Hans D. Mittelmann es un investigador asociado a Arizona State University, conocido por mantener
-benchmarks computacionales de software de optimización numérica. En el contexto de
-\acrshort{sdp}, su página \textit{Several SDP-codes on sparse and other SDP problems (also on
-GPUs)} reúne comparaciones de distintos códigos SDP sobre problemas dispersos y otros problemas
-semidefinidos, incluyendo resultados para solvers clásicos y códigos ejecutados en GPU \parencite{PlatoasueduFtpSparse_sdphtml}.
-
-\paragraph{DIMACS Library.}
-\label{subsec:benchmark_dimacs}
-
-DIMACS corresponde al \textit{Center for Discrete Mathematics and Theoretical Computer
-Science}, una iniciativa asociada a Rutgers University orientada a investigación en matemática
-discreta, computación teórica y sus aplicaciones. Además de su actividad académica, DIMACS ha
-organizado desafíos de implementación cuyo objetivo es comparar algoritmos y software sobre
-problemas computacionales bien definidos. En este marco, el \textit{Seventh DIMACS
-Implementation Challenge} estuvo dedicado a problemas semidefinidos y problemas de
-optimización relacionados.
-
-La biblioteca asociada a este desafío reúne instancias de programas semidefinidos,
-cuadráticos y lineales mixtos \parencite{DIMACSLibraryMixeda}.
-
-\paragraph{Biq Mac Library.}
-\label{subsec:benchmark_biqmac}
-
-Biq Mac Library es una colección de instancias para problemas de corte máximo
-(\textit{Max-Cut}) y programación cuadrática binaria 0-1. La biblioteca está asociada al
-desarrollo de Biq Mac, un algoritmo \textit{Branch and Bound} que utiliza cotas superiores
-obtenidas mediante relajaciones semidefinidas para resolver instancias de tamaño medio de estos
-problemas \parencite{rendlSolvingMaxCutOptimality2010a}. Por esta razón, aunque las formulaciones originales son combinatoriales, la colección
-resulta relevante para evaluar métodos y representaciones basadas en \acrshort{sdp}. Sus
-instancias aportan una familia distinta a las colecciones orientadas a control o diseño
-estructural, y ayudan a poblar regiones del espacio de instancias con patrones de densidad,
-estructura de grafo y bloqueo diferentes \parencite{BiqMacLibrarya}.
-
-\subsection{Representación de instancias}
-\label{sec:representacion_instancias}
-
-\subsubsection{Formato SDPA}
-\label{subsec:formato_sdpa}
-
-El formato SDPA denso, usualmente almacenado con extensión \texttt{.dat}, escribe explícitamente
-el número de variables, el número de bloques, la estructura de bloques, el vector de costos y las
-matrices $F_i$. En esta representación, cada matriz se entrega como un bloque completo, por lo
-que resulta directa de leer y útil para ejemplos pequeños. Sin embargo, cuando las matrices tienen
-muchos ceros, la representación densa puede crecer innecesariamente y repetir información que no
-aporta a la instancia \parencite{SDPAFormat}.
-
-El siguiente ejemplo, tomado de la documentación de SDPA para Python \parencite{SDPAFormat}, muestra una instancia
-con $m=3$ variables, un único bloque de tamaño $2$ y el vector de costos
-$c=(48,-8,20)$. El Cuadro~\ref{tab:sdpa_problem_example} presenta el problema SDP
-asociado a esa instancia.
-
-\input{../attachments/sdpa_problem_example}
-
-En formato SDPA denso, la misma instancia se escribe como se muestra en el
-Cuadro~\ref{tab:sdpa_format_example}.
-
-\input{../attachments/sdpa_format_example}
-
-\newpage
-\subsubsection{Formato SDPA sparse}
-\label{subsec:formato_sdpa_sparse}
-
-El formato SDPA sparse, usualmente almacenado con extensión \texttt{.dat-s}, conserva el mismo
-encabezado general, pero reemplaza la escritura completa de las matrices por una lista de
-entradas no nulas. Después del vector de costos, cada fila contiene cinco valores:
-\[
-    (\text{matno},\text{blkno},i,j,v),
-\]
-donde \texttt{matno} identifica la matriz $F_i$; \texttt{blkno} identifica el bloque; $i$ y $j$
-indican la posición dentro del bloque; y $v$ es el valor almacenado. Como las matrices son
-simétricas, no es necesario duplicar todas las entradas: la posición $(i,j)$ y $(j,i)$ representan
-la misma información \parencite{SDPAFormat}.
-
-La misma instancia anterior puede escribirse en formato sparse como se muestra en el
-Cuadro~\ref{tab:sdpa_sparse_format_example}.
-
-\input{../attachments/sdpa_sparse_format_example}
-
-Esta representación es especialmente adecuada para bibliotecas de instancias \acrshort{sdp}, ya
-que muchas matrices de restricciones son dispersas. Al almacenar solo entradas no nulas, el
-formato reduce el tamaño de los archivos, facilita la lectura automática y permite extraer
-características estructurales como densidad, patrones de no nulidad, solapamiento entre
-restricciones y propiedades de grafos inducidos por las matrices.
-
 \section{Instance Space Analysis}
 \label{sec:instance_space_analysis}
 
